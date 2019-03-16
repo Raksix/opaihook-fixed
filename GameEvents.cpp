@@ -44,12 +44,12 @@ float cur() {
 	int g_tick = 0;
 	CUserCmd* g_pLastCmd = nullptr;
 	if (!g_pLastCmd || g_pLastCmd->hasbeenpredicted) {
-		g_tick = csgo::LocalPlayer->GetTickBase();
+		g_tick = g::LocalPlayer->GetTickBase();
 	}
 	else {
 		++g_tick;
 	}
-	g_pLastCmd = csgo::UserCmd;
+	g_pLastCmd = g::UserCmd;
 	float curtime = g_tick * g_pGlobals->interval_per_tick;
 	return curtime;
 }
@@ -62,6 +62,7 @@ namespace Eventlog
 	{
 		Color clr = Color::Green();
 		messages.push_back(CMessage(str, cur(), clr, 255));
+		
 		g_pEngine->ClientCmd_Unrestricted(("echo " + prefix + str).c_str());
 	}
 	void Draw()
@@ -167,9 +168,9 @@ void cGameEvent::FireGameEvent(IGameEvent *event)
 		return;
 
 	if (!strcmp(szEventName, "round_start"))
-		csgo::NewRound = true;
+		g::NewRound = true;
 	else
-		csgo::NewRound = false;
+		g::NewRound = false;
 
 	if (strcmp(szEventName, "player_hurt") == 0)
 	{
@@ -179,11 +180,11 @@ void cGameEvent::FireGameEvent(IGameEvent *event)
 		if (!entity)
 			return;
 
-		if (entity->GetTeamNum() == csgo::LocalPlayer->GetTeamNum())
+		if (entity->GetTeamNum() == g::LocalPlayer->GetTeamNum())
 			return;
 
 		auto attacker = get_player(event->GetInt("attacker"));
-		if (attacker == csgo::LocalPlayer)
+		if (attacker == g::LocalPlayer)
 		{
 			g_Aimbot->data[entity->Index()].shoots_hit++;
 		}
@@ -196,7 +197,7 @@ void cGameEvent::FireGameEvent(IGameEvent *event)
 			auto attacker = get_player(event->GetInt("attacker"));
 			auto victim = get_player(event->GetInt("userid"));
 
-			if (!attacker || !victim || attacker != csgo::LocalPlayer)
+			if (!attacker || !victim || attacker != g::LocalPlayer)
 				return;
 
 			Vector enemypos = victim->GetOrigin();
@@ -265,7 +266,7 @@ void cGameEvent::FireGameEvent(IGameEvent *event)
 	if (strstr(event->GetName(), "bullet_impact"))
 	{
 		CBaseEntity* ent = get_player(event->GetInt("userid"));
-		if (!ent || ent != csgo::LocalPlayer)
+		if (!ent || ent != g::LocalPlayer)
 			return;
 
 		impact_info info;
@@ -286,7 +287,7 @@ void cGameEvent::FireGameEvent(IGameEvent *event)
 			{
 				auto* index = g_pEntitylist->GetClientEntity(g_pEngine->GetPlayerForUserID(event->GetInt("userid")));
 
-				if (csgo::LocalPlayer)
+				if (g::LocalPlayer)
 				{
 					Vector position(event->GetFloat("x"), event->GetFloat("y"), event->GetFloat("z"));
 

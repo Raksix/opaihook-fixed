@@ -47,7 +47,7 @@ void CFixMove::End(CUserCmd* cmd)
 	if (cmd->viewangles.x < -90.f && cmd->viewangles.x > -1000 || cmd->viewangles.x > 90.f && cmd->viewangles.x <= 1000.f)
 		cmd->forwardmove = -cmd->forwardmove;
 
-	if (csgo::LocalPlayer->GetMoveType() == (int)MoveType_t::MOVETYPE_LADDER)
+	if (g::LocalPlayer->GetMoveType() == (int)MoveType_t::MOVETYPE_LADDER)
 	{
 		if (cmd->viewangles.x > 0)
 			cmd->upmove = -cmd->upmove;

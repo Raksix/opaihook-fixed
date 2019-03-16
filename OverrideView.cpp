@@ -10,9 +10,9 @@ void __fastcall Hooks::OverrideView(void* _this, void* _edx, CViewSetup* setup)
 {
 	if (g_pEngine->IsInGame() && g_pEngine->IsConnected())
 	{
-		if (csgo::LocalPlayer && csgo::LocalPlayer->GetHealth() > 0)
+		if (g::LocalPlayer && g::LocalPlayer->GetHealth() > 0)
 		{
-			if (!csgo::LocalPlayer->IsScoped())
+			if (!g::LocalPlayer->IsScoped())
 			{
 				setup->fov = 90 + Menu.Misc.PlayerFOV;
 			}
@@ -26,7 +26,7 @@ void __fastcall Hooks::OverrideView(void* _this, void* _edx, CViewSetup* setup)
 			}
 
 			if (Menu.Antiaim.AntiaimEnable && GetAsyncKeyState('Z'))
-				setup->origin.z = csgo::LocalPlayer->GetAbsOrigin().z + 64.f;
+				setup->origin.z = g::LocalPlayer->GetAbsOrigin().z + 64.f;
 		}
 	}
 	grenade_prediction::instance().View(setup);
@@ -40,7 +40,7 @@ float __stdcall GGetViewModelFOV()
 
 	if (g_pEngine->IsConnected() && g_pEngine->IsInGame())
 	{
-		if (csgo::LocalPlayer)
+		if (g::LocalPlayer)
 		{
 				fov += Menu.Misc.PlayerViewmodel;
 		}

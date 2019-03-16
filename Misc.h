@@ -7,6 +7,7 @@ public:
 	void Bunnyhop();
 	void WalkBotCM(Vector & oldang);
 	void AutoStrafe();
+	void RunMiscFuncs();
 	void FixCmd();
 	void FixMovement();
 	void HandleClantag();

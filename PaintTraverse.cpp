@@ -16,30 +16,6 @@
 bool first_frame_passed = false;
 std::string sPanel = XorStr("FocusOverlayPanel");
 
-void forceCross()
-{
-	if (!Menu.Visuals.ForceCrosshair)
-		return;
-
-	if (csgo::LocalPlayer && csgo::LocalPlayer->isAlive())
-	{
-		if (csgo::LocalPlayer->IsScoped())
-			return;
-
-		static char* DrawCrosshairWeaponTypeCheck = reinterpret_cast<char*>(FindPatternIDA(client_dll, "83 F8 05 75 17"));
-
-		DWORD dwOldProtect;
-		DWORD dwNewProtect;
-
-		VirtualProtectEx(GetCurrentProcess(), DrawCrosshairWeaponTypeCheck, 3, PAGE_EXECUTE_READWRITE, &dwOldProtect);
-
-
-		*((DrawCrosshairWeaponTypeCheck + 0x2)) = 0xFF;
-
-		VirtualProtectEx(GetCurrentProcess(), DrawCrosshairWeaponTypeCheck, 3, dwOldProtect, &dwNewProtect);
-	}
-}
-
 void __fastcall Hooks::PaintTraverse(void* ecx/*thisptr*/, void* edx, unsigned int vgui_panel, bool force_repaint, bool allow_force) // cl
 {
 	if (Menu.Visuals.EspEnable && Menu.Visuals.Noscope && strcmp("HudZoom", g_pPanel->GetName(vgui_panel)) == 0)
@@ -49,7 +25,7 @@ void __fastcall Hooks::PaintTraverse(void* ecx/*thisptr*/, void* edx, unsigned i
 
 	static bool bSpoofed = false;
 
-	if (Menu.Misc.TPKey > 0 && !bSpoofed)
+	if (!bSpoofed)
 	{
 		ConVar* svcheats = g_pCvar->FindVar("sv_cheats");
 		SpoofedConvar* svcheatsspoof = new SpoofedConvar(svcheats);
@@ -64,51 +40,56 @@ void __fastcall Hooks::PaintTraverse(void* ecx/*thisptr*/, void* edx, unsigned i
 
 	int cur_height, cur_width; g_pEngine->GetScreenSize(cur_width, cur_height);
 
-	if (!first_frame_passed || cur_width != csgo::Screen.width || cur_height != csgo::Screen.height)
+	if (!first_frame_passed || cur_width != g::Screen.width || cur_height != g::Screen.height)
 	{
 		first_frame_passed = true;
 		draw::InitFonts();
 		g_pEngine->GetScreenSize(cur_width, cur_height);
-		csgo::Screen.height = cur_height;
-		csgo::Screen.width = cur_width;
+		g::Screen.height = cur_height;
+		g::Screen.width = cur_width;
 	}
 
 	for (int i = 0; i < 4; i++)
 	{
 		for (int j = 0; j < 4; j++)
 		{
-			csgo::viewMatrix[i][j] = g_pEngine->WorldToScreenMatrix()[i][j];
+			g::viewMatrix[i][j] = g_pEngine->WorldToScreenMatrix()[i][j];
 		}
 	}
 
-	if (Menu.Visuals.DamageIndicators)
-	{
-		csgo::CurrTime = g_pGlobals->interval_per_tick * (csgo::LocalPlayer->GetTickBase() + 1);
-
-		if (!csgo::DamageHit.empty())
-		{
-			for (auto it = csgo::DamageHit.begin(); it != csgo::DamageHit.end();) {
-				if (csgo::CurrTime > it->ExpireTime) {
-					it = csgo::DamageHit.erase(it);
-					continue;
-				}
-				it->Draw();
-				++it;
-			}
-		}
-	}
-
-	forceCross();
-
-	if (Menu.Visuals.Hitmarker && csgo::LocalPlayer && csgo::LocalPlayer->isAlive()) {
+	if (Menu.Visuals.Hitmarker && g::LocalPlayer && g::LocalPlayer->isAlive()) {
 		hitmarker_2->paint();
 	}
 
 	static ConVar* PostProcVar = g_pCvar->FindVar("mat_postprocess_enable");
 	PostProcVar->SetValue(!Menu.Visuals.RemoveParticles);
 
+	if (g::LocalPlayer) {
+		bool enable_force_crosshair = !g::LocalPlayer->IsScoped() && Menu.Visuals.ForceCrosshair;
+		static auto weapon_debug = g_pCvar->FindVar("weapon_debug_spread_show");
+		weapon_debug->SetValue(enable_force_crosshair ? 3 : 0);
+	}
+
+	static float r; r += 0.001f; if (r > 1) r = 0;
+
+	static auto viewmodel_offset_x = g_pCvar->FindVar("viewmodel_offset_x");
+	static auto viewmodel_offset_y = g_pCvar->FindVar("viewmodel_offset_y");
+	static auto viewmodel_offset_z = g_pCvar->FindVar("viewmodel_offset_z");
+
+	viewmodel_offset_x->m_fnChangeCallbacks.m_Size = 0;
+	viewmodel_offset_y->m_fnChangeCallbacks.m_Size = 0;
+	viewmodel_offset_z->m_fnChangeCallbacks.m_Size = 0;
+
+	static float old_value_x = viewmodel_offset_x->GetFloat();
+	static float old_value_y = viewmodel_offset_y->GetFloat();
+	static float old_value_z = viewmodel_offset_z->GetFloat();
+
+	viewmodel_offset_x->SetValue(old_value_x + Menu.Visuals.Viewmodel_X);
+	viewmodel_offset_y->SetValue(old_value_y + Menu.Visuals.Viewmodel_Y);
+	viewmodel_offset_z->SetValue(old_value_z + Menu.Visuals.Viewmodel_Z);
+
 	visuals::Do();
-	draw::DrawPixel(1, 1, Color(0, 0, 0));
-	draw::Textf(csgo::Screen.width - 70, 6, Color::White(), F::eventlog, "opaihook fixed");
+	draw::DrawPixel(1, 1, Color(0, 0, 0, 0));
+	draw::Textf(g::Screen.width - 75, 6, Color::FromHSB(r, 1, 1), F::eventlog, "opaihook fixed");
 	grenade_prediction::instance().Paint();
 }

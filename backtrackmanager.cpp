@@ -32,9 +32,9 @@ bool CBackTrackManager::IsVisibleTick(RecordTick_t tick, bool smokecheck, bool b
 		for (Vector CheckPos : vecPoints)
 		{
 			Ray_t ray;
-			ray.Init(csgo::LocalPlayer->GetEyePosition(), CheckPos);
+			ray.Init(g::LocalPlayer->GetEyePosition(), CheckPos);
 			CTraceFilter filter;
-			filter.pSkip1 = csgo::LocalPlayer;
+			filter.pSkip1 = g::LocalPlayer;
 
 			trace_t trace;
 			g_pEngineTrace->TraceRay(ray, MASK_SHOT | CONTENTS_GRATE, &filter, &trace);
@@ -48,9 +48,9 @@ bool CBackTrackManager::IsVisibleTick(RecordTick_t tick, bool smokecheck, bool b
 	if (bVisible && bodycheck)
 	{
 		Ray_t ray;
-		ray.Init(csgo::LocalPlayer->GetEyePosition(), pEntity->GetBonePos(8, tick.boneMatrix));
+		ray.Init(g::LocalPlayer->GetEyePosition(), pEntity->GetBonePos(8, tick.boneMatrix));
 		CTraceFilter filter;
-		filter.pSkip1 = csgo::LocalPlayer;
+		filter.pSkip1 = g::LocalPlayer;
 
 		trace_t trace;
 		g_pEngineTrace->TraceRay(ray, MASK_SHOT | CONTENTS_GRATE, &filter, &trace);
@@ -58,7 +58,7 @@ bool CBackTrackManager::IsVisibleTick(RecordTick_t tick, bool smokecheck, bool b
 	}
 
 	//if (smokecheck)
-	//	bVisible = bVisible && !U::LineGoesThroughSmoke(csgo::LocalPlayer->GetEyePosition(), pEntity->GetBonePosition(8, tick.boneMatrix));
+	//	bVisible = bVisible && !U::LineGoesThroughSmoke(g::LocalPlayer->GetEyePosition(), pEntity->GetBonePosition(8, tick.boneMatrix));
 
 	return bVisible;
 }

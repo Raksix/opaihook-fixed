@@ -293,7 +293,7 @@ void DrawBarrel(CBaseEntity* entity)
 	};
 
 
-	auto local_player = csgo::LocalPlayer;
+	auto local_player = g::LocalPlayer;
 
 	if (!local_player)
 		return;
@@ -335,21 +335,19 @@ void DrawBarrel(CBaseEntity* entity)
 
 void local_esp()
 {
-	if (csgo::LocalPlayer && csgo::LocalPlayer->isAlive())
+	if (g::LocalPlayer && g::LocalPlayer->isAlive())
 	{
-	
-
-		if (Menu.Visuals.Noscope && csgo::LocalPlayer->IsScoped())
+		if (Menu.Visuals.Noscope && g::LocalPlayer->IsScoped())
 		{
-			draw::DrawLine(csgo::Screen.width / 2, 0, csgo::Screen.width / 2, csgo::Screen.height, Color::Black());
-			draw::DrawLine(0, csgo::Screen.height / 2, csgo::Screen.width, csgo::Screen.height / 2, Color::Black());
+			draw::DrawLine(g::Screen.width / 2, 0, g::Screen.width / 2, g::Screen.height, Color::Black());
+			draw::DrawLine(0, g::Screen.height / 2, g::Screen.width, g::Screen.height / 2, Color::Black());
 		}
 		if (Menu.Antiaim.Indicator)
 		{
-			if (csgo::RealAngle.y != csgo::LocalPlayer->LowerBodyYaw())
-				draw::Textf(10, csgo::Screen.height - 80, Color(178, 242, 4), F::indicators, "faek");
+			if (g::RealAngle.y != g::LocalPlayer->LowerBodyYaw())
+				draw::Textf(10, g::Screen.height - 80, Color(0	, 242, 4), F::indicators, "faek");
 			else
-				draw::Textf(10, csgo::Screen.height - 80, Color::Red(), F::indicators, "faek");
+				draw::Textf(10, g::Screen.height - 80, Color::Red(), F::indicators, "faek");
 		}
 	}
 }
@@ -362,7 +360,7 @@ void visuals::Do()
 	{
 		if (g_pEngine->IsConnected() && g_pEngine->IsInGame())
 		{
-			if (csgo::LocalPlayer && csgo::LocalPlayer->isAlive())
+			if (g::LocalPlayer && g::LocalPlayer->isAlive())
 			{
 				local_esp();
 				Eventlog::Draw();
@@ -370,8 +368,8 @@ void visuals::Do()
 			for (int i = 0; i < g_pGlobals->maxClients; ++i)
 			{
 				auto entity = g_pEntitylist->GetClientEntity(i);
-				if (!entity || !csgo::LocalPlayer || !entity->IsPlayer() || entity == csgo::LocalPlayer || !entity->isAlive()
-					|| entity->GetTeamNum() == csgo::LocalPlayer->GetTeamNum() || entity->IsDormant())
+				if (!entity || !g::LocalPlayer || !entity->IsPlayer() || entity == g::LocalPlayer || !entity->isAlive()
+					|| entity->GetTeamNum() == g::LocalPlayer->GetTeamNum() || entity->IsDormant())
 					continue;
 			
 				dormantAlpha[entity->GetIndex()] = 255;

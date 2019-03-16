@@ -14,30 +14,10 @@
 #include "Misc.h"
 
 std::vector<const char*> smoke_materials = {
-	"particle/beam_smoke_01",
-	"particle/particle_smokegrenade",
-	"particle/particle_smokegrenade1",
-	"particle/particle_smokegrenade2",
-	"particle/particle_smokegrenade3",
-	"particle/particle_smokegrenade_sc",
-	"particle/smoke1/smoke1",
-	"particle/smoke1/smoke1_ash",
-	"particle/smoke1/smoke1_nearcull",
-	"particle/smoke1/smoke1_nearcull2",
-	"particle/smoke1/smoke1_snow",
-	"particle/smokesprites_0001",
-	"particle/smokestack",
-	"particle/vistasmokev1/vistasmokev1",
-	"particle/vistasmokev1/vistasmokev1_emods",
-	"particle/vistasmokev1/vistasmokev1_emods_impactdust",
-	"particle/vistasmokev1/vistasmokev1_fire",
-	"particle/vistasmokev1/vistasmokev1_nearcull",
-	"particle/vistasmokev1/vistasmokev1_nearcull_fog",
-	"particle/vistasmokev1/vistasmokev1_nearcull_nodepth",
 	"particle/vistasmokev1/vistasmokev1_smokegrenade",
-	"particle/vistasmokev1/vistasmokev4_emods_nocull",
-	"particle/vistasmokev1/vistasmokev4_nearcull",
-	"particle/vistasmokev1/vistasmokev4_nocull"
+				"particle/vistasmokev1/vistasmokev1_emods",
+				"particle/vistasmokev1/vistasmokev1_emods_impactdust",
+				"particle/vistasmokev1/vistasmokev1_fire",
 };
 
 void DrawBeam(Vector src, Vector end, Color color)
@@ -73,7 +53,7 @@ void __stdcall Hooks::FrameStageNotify(ClientFrameStage_t curStage)
 	static std::string old_Skyname = "";
 	static bool OldNightmode;
 	static int OldSky;
-	if (!csgo::LocalPlayer || !g_pEngine->IsConnected() || !g_pEngine->IsInGame())
+	if (!g::LocalPlayer || !g_pEngine->IsConnected() || !g_pEngine->IsInGame())
 	{
 		clientVMT->GetOriginalMethod<FrameStageNotifyFn>(37)(curStage);
 		old_Skyname = "";
@@ -135,9 +115,9 @@ void __stdcall Hooks::FrameStageNotify(ClientFrameStage_t curStage)
 	}
 	static Vector oldViewPunch;
 	static Vector oldAimPunch;
-	Vector* view_punch = csgo::LocalPlayer->GetViewPunchPtr();
-	Vector* aim_punch = csgo::LocalPlayer->GetPunchAnglePtr();
-	if (curStage == FRAME_RENDER_START && csgo::LocalPlayer->isAlive())
+	Vector* view_punch = g::LocalPlayer->GetViewPunchPtr();
+	Vector* aim_punch = g::LocalPlayer->GetPunchAnglePtr();
+	if (curStage == FRAME_RENDER_START && g::LocalPlayer->isAlive())
 	{
 	
 		static bool enabledtp = false, check = false;
@@ -152,7 +132,7 @@ void __stdcall Hooks::FrameStageNotify(ClientFrameStage_t curStage)
 			check = false;
 
 		if (enabledtp)
-			*reinterpret_cast<QAngle*>(reinterpret_cast<DWORD>(csgo::LocalPlayer + 0x31D8)) = csgo::FakeAngle;
+			*reinterpret_cast<QAngle*>(reinterpret_cast<DWORD>(g::LocalPlayer + 0x31D8)) = g::FakeAngle;
 
 
 		if (enabledtp)
@@ -207,7 +187,7 @@ void __stdcall Hooks::FrameStageNotify(ClientFrameStage_t curStage)
 	}
 	if (curStage == FRAME_RENDER_START)
 	{
-		for (int i = 1; i < g_pGlobals->maxClients; i++)
+		for (int i = 1; i < 65; i++)
 		{
 			if (i == g_pEngine->GetLocalPlayer())
 				continue;
@@ -223,84 +203,41 @@ void __stdcall Hooks::FrameStageNotify(ClientFrameStage_t curStage)
 		}
 	}
 
-	c_animfix::get().on_fsn(curStage);
-
-	/*if (curStage == FRAME_RENDER_START)
-	{
-		if (Menu.Ragebot.AnimFix)
-		{
-			if (csgo::LocalPlayer && csgo::LocalPlayer->isAlive()) {
-				animation_fix::get().local();
-			}
-		}
-	}*/
+	c_animfix::get().on_fsn(curStage); //eye candy != fix animations
 
 	if (curStage == FRAME_RENDER_START)
 	{
-		if (csgo::LocalPlayer && csgo::LocalPlayer->isAlive())
-		{
-			for (int i = 1; i < g_pGlobals->maxClients; i++)
-			{
-				CBaseEntity* pEntity = g_pEntitylist->GetClientEntity(i);
-				if (pEntity)
-				{
-					if (pEntity->GetHealth() > 0)
-					{
-						if (i != g_pEngine->GetLocalPlayer())
-						{
-							VarMapping_t* map = pEntity->GetVarMap();
-							if (!map) return;
-							for (int i = 0; i < map->m_nInterpolatedEntries; i++)
-							{
-								VarMapEntry_t *e = &map->m_Entries[i];
-								e->m_bNeedsToInterpolate = false;
-							}
-
-						}
-					}
-				}
-			}
-		}
-	}
-
-	//if (curStage == FRAME_NET_UPDATE_POSTDATAUPDATE_START)
-	//{
-	//	if (csgo::LocalPlayer && csgo::LocalPlayer->isAlive())
-	//	{
-	//		if (Menu.Ragebot.AutomaticResolver)
-	//		{
-	//			for (int i = 0; i < g_pGlobals->maxClients; i++) {
-	//				auto pEntity = g_pEntitylist->GetClientEntity(i);
-	//				if (pEntity == nullptr || !pEntity->IsValidTarget())
-	//					continue;
-	//				Resolver::Do(pEntity);
-	//			}
-	//		}
-	//	}
-	//	/*if (Menu.Ragebot.AnimFix)
-	//		animation_fix::get().post_update_start();*/
-	//}
-
-	if (curStage == FRAME_RENDER_START)
-	{
-		for (int i = 1; i < g_pGlobals->maxClients; i++)
+		for (int i = 1; i < 65; i++)
 		{
 			CBaseEntity* pEntity = g_pEntitylist->GetClientEntity(i);
 			if (pEntity && pEntity->IsValidTarget())
 			{
-				if (pEntity->GetHealth() > 0 && !pEntity->IsDormant())
-				{
-					g_BacktrackHelper->UpdateBacktrackRecords(pEntity);
-				}
+				g_BacktrackHelper->UpdateBacktrackRecords(pEntity);
+			}
+		}
+	}
+
+	if (curStage == FRAME_NET_UPDATE_END)
+	{
+		for (int o = 0; o < 64; ++o) {
+			auto pPlayerEntity = g_pEntitylist->GetClientEntity(o);
+			if (pPlayerEntity == nullptr || !g::LocalPlayer || !pPlayerEntity->isAlive()
+				|| pPlayerEntity->IsDormant() || pPlayerEntity == g::LocalPlayer || pPlayerEntity->GetTeamNum() == g::LocalPlayer->GetTeamNum())
+				continue;
+			if (pPlayerEntity != g::LocalPlayer)
+			{
+				auto VarMap = reinterpret_cast<uintptr_t>(pPlayerEntity) + 36;
+				auto VarMapSize = *reinterpret_cast<int*>(VarMap + 20);
+
+				for (auto index = 0; index < VarMapSize; index++)
+					*reinterpret_cast<uintptr_t*>(*reinterpret_cast<uintptr_t*>(VarMap) + index * 12) = 0;
 			}
 		}
 	}
 
 	clientVMT->GetOriginalMethod<FrameStageNotifyFn>(37)(curStage);
-	if (curStage == FRAME_RENDER_START && csgo::LocalPlayer && csgo::LocalPlayer->GetHealth() > 0)
+	if (curStage == FRAME_RENDER_START && g::LocalPlayer && g::LocalPlayer->GetHealth() > 0)
 	{
-		
-
 		if (Menu.Visuals.Novisrevoil)
 		{
 			*aim_punch = oldAimPunch;

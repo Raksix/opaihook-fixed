@@ -70,13 +70,13 @@ std::array<float, 24> &CBaseEntity::m_flPoseParameter()
 
 bool CBaseEntity::IsValidRenderable() {
 
-	if (!this || this == nullptr || csgo::LocalPlayer == nullptr)
+	if (!this || this == nullptr || g::LocalPlayer == nullptr)
 		return false;
 
-	if (this == csgo::LocalPlayer)
+	if (this == g::LocalPlayer)
 		return false;
 
-	if (this->GetTeamNum() == csgo::LocalPlayer->GetTeamNum())
+	if (this->GetTeamNum() == g::LocalPlayer->GetTeamNum())
 		return false;
 
 	if (this->IsDormant())
@@ -105,13 +105,13 @@ bool CBaseEntity::IsValidTarget() {
 
 	ClientClass* pClass = (ClientClass*)this->GetClientClass(); // Needed to check clientclass after nullptr check that was causing a crash
 
-	if (this == csgo::LocalPlayer)
+	if (this == g::LocalPlayer)
 		return false;
 
 	if (pClass->m_ClassID != 38)
 		return false;
 
-	if (this->GetTeamNum() == csgo::LocalPlayer->GetTeamNum())
+	if (this->GetTeamNum() == g::LocalPlayer->GetTeamNum())
 		return false;
 
 	if (this->IsDormant())
@@ -250,7 +250,7 @@ bool CBaseEntity::IsTargettingLocal()
 	Vector src, dst, forward;
 	trace_t tr;
 
-	if (!this || !csgo::LocalPlayer || csgo::LocalPlayer->GetHealth() < 0)
+	if (!this || !g::LocalPlayer || g::LocalPlayer->GetHealth() < 0)
 		return false;
 
 	Vector viewangle = this->GetEyeAngles();
@@ -263,12 +263,12 @@ bool CBaseEntity::IsTargettingLocal()
 	Ray_t ray;
 	ray.Init(src, dst);
 	CTraceCBaseEntity filter;
-	filter.pHit = csgo::LocalPlayer;
+	filter.pHit = g::LocalPlayer;
 
 	g_pEngineTrace->TraceRay_NEW(ray, MASK_SHOT, &filter, &tr);
 	
 
-	if (tr.m_pEnt && tr.m_pEnt->GetTeamNum() != this->GetTeamNum()/*== csgo::LocalPlayer*/)
+	if (tr.m_pEnt && tr.m_pEnt->GetTeamNum() != this->GetTeamNum()/*== g::LocalPlayer*/)
 		return true;
 
 	return false;

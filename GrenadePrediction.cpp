@@ -25,9 +25,9 @@ void grenade_prediction::View(CViewSetup* setup)
 	if (!Menu.Visuals.GrenadePrediction)
 		return;
 
-	if (csgo::LocalPlayer && csgo::LocalPlayer->isAlive())
+	if (g::LocalPlayer && g::LocalPlayer->isAlive())
 	{
-		CBaseCombatWeapon* weapon = csgo::LocalPlayer->GetWeapon();
+		CBaseCombatWeapon* weapon = g::LocalPlayer->GetWeapon();
 
 		if (weapon && weapon->IsGrenade() && act != ACT_NONE)
 		{
@@ -140,7 +140,7 @@ void grenade_prediction::Setup(Vector& vecSrc, Vector& vecThrow, Vector viewangl
 	Vector vForward, vRight, vUp;
 	angle_vectors2(angThrow, &vForward, &vRight, &vUp); //angThrow.ToVector(vForward, vRight, vUp);
 
-	vecSrc = csgo::LocalPlayer->GetEyePosition();
+	vecSrc = g::LocalPlayer->GetEyePosition();
 	float off = (power[act] * 12.0f) - 12.0f;
 	vecSrc.z += off;
 
@@ -158,7 +158,7 @@ void grenade_prediction::Setup(Vector& vecSrc, Vector& vecThrow, Vector viewangl
 	vecSrc -= vecBack;
 
 	// Finally calculate velocity
-	vecThrow = csgo::LocalPlayer->GetVelocity(); vecThrow *= 1.25f;
+	vecThrow = g::LocalPlayer->GetVelocity(); vecThrow *= 1.25f;
 	vecThrow += vForward * flVel; //	vecThrow.MultAdd(vForward, flVel);
 }
 

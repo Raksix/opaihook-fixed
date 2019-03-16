@@ -161,161 +161,82 @@ int __fastcall Hooked_SendDatagram(void* netchan, void*, void *datagram)
 
 }
 
-
-TraceRayFn oTraceRay;
-
-/*void __fastcall  g_hkTraceRay(void *thisptr, void*, const Ray_t& ray, unsigned int fMask, ITraceFilter* pTraceFilter, trace_t* pTrace)
-{
-	CTraceFilterSkipTwoEntities filter;
-	filter.passentity1 = reinterpret_cast< void* >(g_pEntitylist->GetClientEntity(g_pEngine->GetLocalPlayer()));
-	filter.passentity2 = reinterpret_cast< void* >(reinterpret_cast< CBaseEntity* >(filter.passentity1)->GetWeapon());
-
-	oTraceRay(thisptr, ray, fMask, &filter, pTrace);
-
-	pTrace->surface.flags |= SURF_SKY;
-}*/
-
-bool __fastcall Hooks::CreateMove(void* thisptr, void*, float flInputSampleTime, CUserCmd* cmd)
-{
-	if (cmd)
+void InitFakeLatency() {
+	if (Menu.Ragebot.FakeLatency)
 	{
-
-		if (!cmd->command_number)
-			return true;
-
-		static bool last_sendpacket;
-		//g_pEngine->SetViewAngles(cmd->viewangles);
-		QAngle org_view = cmd->viewangles;
-
-		CBaseEntity* pLocalPlayer = g_pEntitylist->GetClientEntity(g_pEngine->GetLocalPlayer());
-		if (pLocalPlayer)
+		if (!HNetchan)
 		{
-			g_BacktrackHelper->UpdateIncomingSequences();
-			csgo::LocalPlayer = pLocalPlayer;
-			csgo::UserCmd = cmd;
-			csgo::UserCmdForBacktracking = cmd;
-			if (pLocalPlayer->GetHealth() > 0)
+			static DWORD ClientState = *(DWORD*)FakeLatency::ClientState;
+
+			if (ClientState)
 			{
-
-				CBaseCombatWeapon* pWeapon = pLocalPlayer->GetWeapon();
-				if (pWeapon)
+				static DWORD NetChannel = *(DWORD*)(*(DWORD*)FakeLatency::ClientState + 0x9C);
+				if (NetChannel)
 				{
-					PVOID pebp;
-					__asm mov pebp, ebp;
-					bool* pbSendPacket = (bool*)(*(PDWORD)pebp - 0x1C);
-					bool& bSendPacket = *pbSendPacket;
-
-					csgo::SendPacket = bSendPacket;
-
-					csgo::vecUnpredictedVel = csgo::LocalPlayer->GetVelocity();
-
-					csgo::MainWeapon = pWeapon;
-					csgo::WeaponData = pWeapon->GetCSWpnData();
-
-					csgo::StrafeAngle = csgo::UserCmd->viewangles;
-
-
-					g_Aimbot->DropTarget();
-
-					Prediction->EnginePrediction(cmd);
-
-					g_Aimbot->Run();
-
-					g_Aimbot->CompensateInaccuracies();
-
-					if (Menu.Misc.KnifeBot) {
-						KnifeBot::Run();
-					}
-
-					g_Misc->HandleClantag();
-					g_Misc->Bunnyhop();
-					g_Misc->AutoStrafe();
-					g_Misc->DoCircle();
-
-					if ((csgo::UserCmd->buttons & IN_ATTACK ||
-						(csgo::UserCmd->buttons & IN_ATTACK2 && (csgo::MainWeapon->WeaponID() == REVOLVER || csgo::MainWeapon->IsKnife()))) && GameUtils::IsAbleToShoot())
-						g_Aimbot->fired_in_that_tick = true;
-
-					if (Menu.LegitBot.bEnable) {
-						CBackTrackManager::get().UpdateTicks();
-					}
-					if (Menu.LegitBot.bEnable)
-						CLegitBot::get().Run();
-
-
-					if (Menu.Misc.FakelagEnable)
-						g_Misc->FakeLag();
-
-					//csgo::ForceRealAA = false;
-					//if (csgo::ChokedPackets >= 14)// breaks fakewalk
-					//{
-					//	csgo::SendPacket = true;
-					//	csgo::ChokedPackets = 0;
-					//	csgo::ForceRealAA = true;
-					//}
-
-					g_Antiaim->Run(org_view);
-
-					if ((csgo::UserCmd->buttons & IN_ATTACK || csgo::UserCmd->buttons & IN_ATTACK2 && csgo::MainWeapon->WeaponID() == REVOLVER) && (csgo::MainWeapon->IsPistol() || csgo::MainWeapon->WeaponID() == AWP || csgo::MainWeapon->WeaponID() == SSG08))
-					{
-						static bool bFlip = false;
-						if (bFlip)
-						{
-							if (csgo::MainWeapon->WeaponID() == REVOLVER)
-							{
-							}
-							else
-								csgo::UserCmd->buttons &= ~IN_ATTACK;
-						}
-						bFlip = !bFlip;
-					}
-
-					//if (!g_Aimbot->fired_in_that_tick) {
-					if (csgo::SendPacket) {
-						csgo::FakeAngle = cmd->viewangles;
-						csgo::fakeOrigin = csgo::LocalPlayer->GetAbsOrigin();
-					}
-					else
-					{
-						csgo::RealAngle = cmd->viewangles;
-					}
-					//	}
-
-					csgo::ChokedPackets = g_pEngine->GetNetChannel()->m_nChokedPackets;
-
-					if (Menu.Ragebot.FakeLatency)
-					{
-						if (!HNetchan)
-						{
-
-							static DWORD ClientState = *(DWORD*)FakeLatency::ClientState;
-
-							if (ClientState)
-							{
-								static DWORD NetChannel = *(DWORD*)(*(DWORD*)FakeLatency::ClientState + 0x9C);
-								if (NetChannel)
-								{
-									HNetchan = new VMT((DWORD**)NetChannel);
-									HNetchan->HookVM((void*)Hooked_SendDatagram, 46);
-									HNetchan->ApplyVMT();
-								}
-							}
-
-						}
-					}
-
-					csgo::spread = csgo::MainWeapon->GetSpread() + (csgo::MainWeapon->GetInaccuracy() * 800);
-
-					g_Misc->FixMovement();
-					g_Misc->FixCmd();
-
-					cmd = csgo::UserCmd;
-					bSendPacket = csgo::SendPacket;
-					grenade_prediction::instance().Tick(csgo::UserCmd->buttons);
-					last_sendpacket = csgo::SendPacket;
+					HNetchan = new VMT((DWORD**)NetChannel);
+					HNetchan->HookVM((void*)Hooked_SendDatagram, 46);
+					HNetchan->ApplyVMT();
 				}
 			}
 		}
 	}
+}
+
+TraceRayFn oTraceRay;
+
+bool __fastcall Hooks::CreateMove(void* thisptr, void*, float flInputSampleTime, CUserCmd* cmd)
+{
+	if (!cmd || !cmd->command_number)
+		return true;
+
+	g::LocalPlayer = g_pEntitylist->GetClientEntity(g_pEngine->GetLocalPlayer());
+	if (!g::LocalPlayer)
+		return true;
+
+	g::UserCmd = cmd;
+	g::UserCmdForBacktracking = g::UserCmd;
+
+	PVOID pebp;
+	__asm mov pebp, ebp;
+	bool* pbSendPacket = (bool*)(*(PDWORD)pebp - 0x1C);
+	bool& bSendPacket = *pbSendPacket;
+
+	g::SendPacket = bSendPacket;
+
+	if (g_pEngine->IsConnected() && g_pEngine->IsInGame()) {
+		g_BacktrackHelper->UpdateIncomingSequences();
+
+		if (g::LocalPlayer->isAlive()) {
+			g::MainWeapon = g::LocalPlayer->GetWeapon();
+			g::WeaponData = g::MainWeapon->GetCSWpnData();
+
+			g_Aimbot->DropTarget();
+			g_Misc->RunMiscFuncs();
+			KnifeBot::Run();
+
+			Prediction->EnginePrediction(cmd);
+			g_Misc->FakeLag();
+			g_Aimbot->Run();
+			g_Aimbot->CompensateInaccuracies();
+			g_Antiaim->Run(Vector());
+			InitFakeLatency();
+
+			if (g::SendPacket) {
+				g::FakeAngle = cmd->viewangles;
+				g::fakeOrigin = g::LocalPlayer->GetAbsOrigin();
+			}
+			g::RealAngle = cmd->viewangles;
+			g::spread = g::MainWeapon->GetSpread() + (g::MainWeapon->GetInaccuracy() * 800);
+
+			g_Misc->FixMovement();
+			g_Misc->FixCmd();
+
+			grenade_prediction::instance().Tick(g::UserCmd->buttons);
+		}
+	}
+
+	cmd = g::UserCmd;
+	bSendPacket = g::SendPacket;
+	g::ChokedPackets = g_pEngine->GetNetChannel()->m_nChokedPackets;
 	return false;
 }

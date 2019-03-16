@@ -30,10 +30,16 @@ void CAW_hitmaker::paint()
 
 		int lineSize = Menu.Visuals.hitmarkerSize;
 
+		g_pSurface->SetDrawColor(0, 0, 0, hitmarkers.at(i).alpha);
+		g_pSurface->DrawLine(pos2D.x - lineSize * 2 + 1, pos2D.y - lineSize * 2 + 1, pos2D.x - (lineSize)+1, pos2D.y - (lineSize)+1);
+		g_pSurface->DrawLine(pos2D.x - lineSize * 2 + 1, pos2D.y + lineSize * 2 + 1, pos2D.x - (lineSize)+1, pos2D.y + (lineSize)+1);
+		g_pSurface->DrawLine(pos2D.x + lineSize * 2 + 1, pos2D.y + lineSize * 2 + 1, pos2D.x + (lineSize + 1) + 1, pos2D.y + (lineSize + 1) + 1);
+		g_pSurface->DrawLine(pos2D.x + lineSize * 2 + 1, pos2D.y - lineSize * 2 + 1, pos2D.x + (lineSize + 1) + 1, pos2D.y - (lineSize + 1) + 1);
+
 		g_pSurface->SetDrawColor(240, 240, 240, hitmarkers.at(i).alpha);
-		g_pSurface->DrawLine(pos2D.x - lineSize * 2, pos2D.y - lineSize * 2, pos2D.x - (1), pos2D.y - (1));
-		g_pSurface->DrawLine(pos2D.x - lineSize * 2, pos2D.y + lineSize * 2, pos2D.x - (1), pos2D.y + (1));
-		g_pSurface->DrawLine(pos2D.x + lineSize * 2, pos2D.y + lineSize * 2, pos2D.x + (2), pos2D.y + (2));
-		g_pSurface->DrawLine(pos2D.x + lineSize * 2, pos2D.y - lineSize * 2, pos2D.x + (2), pos2D.y - (2));
+		g_pSurface->DrawLine(pos2D.x - lineSize * 2, pos2D.y - lineSize * 2, pos2D.x - (lineSize), pos2D.y - (lineSize));
+		g_pSurface->DrawLine(pos2D.x - lineSize * 2, pos2D.y + lineSize * 2, pos2D.x - (lineSize), pos2D.y + (lineSize));
+		g_pSurface->DrawLine(pos2D.x + lineSize * 2, pos2D.y + lineSize * 2, pos2D.x + (lineSize + 1), pos2D.y + (lineSize + 1));
+		g_pSurface->DrawLine(pos2D.x + lineSize * 2, pos2D.y - lineSize * 2, pos2D.x + (lineSize + 1), pos2D.y - (lineSize + 1));
 	}
 }

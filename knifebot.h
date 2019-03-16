@@ -5,9 +5,11 @@
 class KnifeBot {
 public:
 	static void Run() {
-		if (!csgo::MainWeapon)
+		if (!Menu.Misc.KnifeBot) 
 			return;
-		if (!csgo::MainWeapon->IsKnife())
+		if (!g::MainWeapon)
+			return;
+		if (!g::MainWeapon->IsKnife())
 			return;
 		for (int y = 0; y <= 360; y += 360.f / 6.f) {
 			for (int x = -89; x <= 89; x += 179.f / 6.f) {
@@ -29,17 +31,17 @@ public:
 
 				};
 
-				TraceLine(csgo::LocalPlayer->GetEyePosition(), csgo::LocalPlayer->GetEyePosition() + (dir * 64), MASK_SHOT, csgo::LocalPlayer, 0, &trace);
+				TraceLine(g::LocalPlayer->GetEyePosition(), g::LocalPlayer->GetEyePosition() + (dir * 64), MASK_SHOT, g::LocalPlayer, 0, &trace);
 
 				if (trace.m_pEnt == nullptr)
 					continue;
-				if (trace.m_pEnt == csgo::LocalPlayer)
+				if (trace.m_pEnt == g::LocalPlayer)
 					continue;
 				if (!trace.m_pEnt->isAlive())
 					continue;
 				if (!(trace.m_pEnt->GetHealth() > 0))
 					continue;
-				if (trace.m_pEnt->GetTeamNum() == csgo::LocalPlayer->GetTeamNum())
+				if (trace.m_pEnt->GetTeamNum() == g::LocalPlayer->GetTeamNum())
 					continue;
 				if (trace.m_pEnt->IsDormant())
 					continue;
@@ -48,8 +50,8 @@ public:
 				player_info_t info;
 				if (!(g_pEngine->GetPlayerInfo(trace.m_pEnt->GetIndex(), &info)))
 					continue;
-				csgo::UserCmd->viewangles = QAngle(x, y, 0);
-				csgo::UserCmd->buttons |= IN_ATTACK2;
+				g::UserCmd->viewangles = QAngle(x, y, 0);
+				g::UserCmd->buttons |= IN_ATTACK2;
 				return;
 			}
 		}

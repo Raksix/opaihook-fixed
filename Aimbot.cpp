@@ -49,7 +49,7 @@ void VectorAngles(const Vector& forward, Vector& up, QAngle& angles)
 
 bool hitchance(QAngle angles, CBaseEntity *ent, float chance)
 {
-	auto weapon = csgo::MainWeapon;
+	auto weapon = g::MainWeapon;
 
 	if (!weapon)
 		return false;
@@ -57,64 +57,78 @@ bool hitchance(QAngle angles, CBaseEntity *ent, float chance)
 	if (Menu.Ragebot.NoSpread)
 		return true;
 
-	Vector forward, right, up;
-	Vector src = csgo::LocalPlayer->GetEyePosition();
-	Math::AngleVectors(angles, forward, right, up);
+	if (Menu.Ragebot.PositionAdjustment) {
+		float Velocity = g::LocalPlayer->GetVelocity().Length();
 
-	int cHits = 0;
-	int cNeededHits = static_cast<int>(150.f * (chance / 100.f));
+		if (Velocity <= (g::MainWeapon->GetCSWpnData()->max_speed_alt * .34f))
+			Velocity = 0.0f;
 
-	weapon->UpdateAccuracyPenalty();
-	float weap_spread = weapon->GetSpread();
-	float weap_inaccuracy = weapon->GetInaccuracy();
+		float SpreadCone = g::MainWeapon->GetAccuracyPenalty() * 256.0f / M_PI + g::MainWeapon->GetCSWpnData()->max_speed * Velocity / 3000.0f; // kmeth https://github.com/DankPaster/kmethdude
+		float a = (angles - g::LocalPlayer->GetEyePosition()).Length();
+		float b = sqrt(tan(SpreadCone * M_PI / 180.0f) * a);
+		if (2.2f > b) return true;
+		return (chance <= ((2.2f / fmax(b, 2.2f)) * 100.0f));
+	}
+	else {
+		Vector forward, right, up;
+		Vector src = g::LocalPlayer->GetEyePosition();
+		Math::AngleVectors(angles, forward, right, up);
 
-	for (int i = 0; i < 150; i++)
-	{
-		float a = Math::RandomFloat(0.f, 1.f);
-		float b = Math::RandomFloat(0.f, 2.f * PI_F);
-		float c = Math::RandomFloat(0.f, 1.f);
-		float d = Math::RandomFloat(0.f, 2.f * PI_F);
+		int cHits = 0;
+		int cNeededHits = static_cast<int>(150.f * (chance / 100.f));
 
-		float inaccuracy = a * weap_inaccuracy;
-		float spread = c * weap_spread;
+		weapon->UpdateAccuracyPenalty();
+		float weap_spread = weapon->GetSpread();
+		float weap_inaccuracy = weapon->GetInaccuracy();
 
-		if (weapon->GetItemDefinitionIndex() == 64)
+		for (int i = 0; i < 150; i++)
 		{
-			a = 1.f - a * a;
-			a = 1.f - c * c;
+			float a = Math::RandomFloat(0.f, 1.f);
+			float b = Math::RandomFloat(0.f, 2.f * PI_F);
+			float c = Math::RandomFloat(0.f, 1.f);
+			float d = Math::RandomFloat(0.f, 2.f * PI_F);
+
+			float inaccuracy = a * weap_inaccuracy;
+			float spread = c * weap_spread;
+
+			if (weapon->GetItemDefinitionIndex() == 64)
+			{
+				a = 1.f - a * a;
+				a = 1.f - c * c;
+			}
+
+			Vector spreadView((cos(b) * inaccuracy) + (cos(d) * spread), (sin(b) * inaccuracy) + (sin(d) * spread), 0), direction;
+
+			direction.x = forward.x + (spreadView.x * right.x) + (spreadView.y * up.x);
+			direction.y = forward.y + (spreadView.x * right.y) + (spreadView.y * up.y);
+			direction.z = forward.z + (spreadView.x * right.z) + (spreadView.y * up.z);
+			direction.Normalized();
+
+			QAngle viewAnglesSpread;
+			VectorAngles(direction, up, viewAnglesSpread);
+			Math::NormalizeAngle(viewAnglesSpread);
+
+			Vector viewForward;
+			Math::AngleVectors(viewAnglesSpread, viewForward);
+			viewForward.NormalizeInPlace();
+
+			viewForward = src + (viewForward * weapon->GetCSWpnData()->range);
+
+			trace_t tr;
+			Ray_t ray;
+
+			ray.Init(src, viewForward);
+			g_pEngineTrace->ClipRayToCBaseEntity(ray, MASK_SHOT | CONTENTS_GRATE, ent, &tr);
+
+			if (tr.m_pEnt == ent)
+				++cHits;
+			static float hit = chance / 100.f;
+			if (static_cast<int>((static_cast<float>(cHits) / 150.f)) >= hit)
+				return true;
+
+			if ((150 - i + cHits) < cNeededHits)
+				return false;
 		}
-
-		Vector spreadView((cos(b) * inaccuracy) + (cos(d) * spread), (sin(b) * inaccuracy) + (sin(d) * spread), 0), direction;
-
-		direction.x = forward.x + (spreadView.x * right.x) + (spreadView.y * up.x);
-		direction.y = forward.y + (spreadView.x * right.y) + (spreadView.y * up.y);
-		direction.z = forward.z + (spreadView.x * right.z) + (spreadView.y * up.z);
-		direction.Normalized();
-
-		QAngle viewAnglesSpread;
-		VectorAngles(direction, up, viewAnglesSpread);
-		Math::NormalizeAngle(viewAnglesSpread);
-
-		Vector viewForward;
-		Math::AngleVectors(viewAnglesSpread, viewForward);
-		viewForward.NormalizeInPlace();
-
-		viewForward = src + (viewForward * weapon->GetCSWpnData()->range);
-
-		trace_t tr;
-		Ray_t ray;
-
-		ray.Init(src, viewForward);
-		g_pEngineTrace->ClipRayToCBaseEntity(ray, MASK_SHOT | CONTENTS_GRATE, ent, &tr);
-
-		if (tr.m_pEnt == ent)
-			++cHits;
-		static float hit = chance / 100.f;
-		if (static_cast<int>((static_cast<float>(cHits) / 150.f)) >= hit)
-			return true;
-
-		if ((150 - i + cHits) < cNeededHits)
-			return false;
 	}
 	return false;
 }
@@ -122,68 +136,99 @@ bool hitchance(QAngle angles, CBaseEntity *ent, float chance)
 std::vector<int> GetHitboxesToScan(CBaseEntity* pTarget)
 {
 	std::vector<int> HitBoxesToScan;
-	int HitScanMode = Menu.Ragebot.Hitscan;
-	int Aimspot = Menu.Ragebot.AimbotSelection;
 
-	switch (HitScanMode) {
-	case 0:
-		break;
-	case 1:
+	if (Menu.Ragebot.Hitscan_Bone[HITSCAN::SCAN_HEAD]) {
 		HitBoxesToScan.push_back((int)CSGOHitboxID::HEAD);
+	}
+	if (Menu.Ragebot.Hitscan_Bone[HITSCAN::SCAN_NECK]) {
 		HitBoxesToScan.push_back((int)CSGOHitboxID::NECK);
-		HitBoxesToScan.push_back((int)CSGOHitboxID::UPPER_CHEST);
+	}
+	if (Menu.Ragebot.Hitscan_Bone[HITSCAN::SCAN_PELVIS]) {
 		HitBoxesToScan.push_back((int)CSGOHitboxID::PELVIS);
-		break;
-	case 2:
-		HitBoxesToScan.push_back((int)CSGOHitboxID::HEAD);
-		HitBoxesToScan.push_back((int)CSGOHitboxID::NECK);
-		HitBoxesToScan.push_back((int)CSGOHitboxID::UPPER_CHEST);
-		HitBoxesToScan.push_back((int)CSGOHitboxID::PELVIS);
+	}
+	if (Menu.Ragebot.Hitscan_Bone[HITSCAN::SCAN_STOMACH]) {
 		HitBoxesToScan.push_back((int)CSGOHitboxID::BELLY);
-
 		HitBoxesToScan.push_back((int)CSGOHitboxID::THORAX);
-		HitBoxesToScan.push_back((int)CSGOHitboxID::LEFT_THIGH);
-		HitBoxesToScan.push_back((int)CSGOHitboxID::RIGHT_THIGH);
-	case 3:
-		HitBoxesToScan.push_back((int)CSGOHitboxID::HEAD);
-		HitBoxesToScan.push_back((int)CSGOHitboxID::NECK);
-		HitBoxesToScan.push_back((int)CSGOHitboxID::UPPER_CHEST);
-		HitBoxesToScan.push_back((int)CSGOHitboxID::LOWER_CHEST);
-		HitBoxesToScan.push_back((int)CSGOHitboxID::PELVIS);
-		HitBoxesToScan.push_back((int)CSGOHitboxID::BELLY);
-
-		HitBoxesToScan.push_back((int)CSGOHitboxID::THORAX);
-		HitBoxesToScan.push_back((int)CSGOHitboxID::LEFT_THIGH);
-		HitBoxesToScan.push_back((int)CSGOHitboxID::RIGHT_THIGH);
-		HitBoxesToScan.push_back((int)CSGOHitboxID::LEFT_CALF);
-		HitBoxesToScan.push_back((int)CSGOHitboxID::RIGHT_CALF);
-		break;
-	case 4:
-	{
-		HitBoxesToScan.push_back((int)CSGOHitboxID::HEAD);
-		HitBoxesToScan.push_back((int)CSGOHitboxID::NECK);
-		HitBoxesToScan.push_back((int)CSGOHitboxID::UPPER_CHEST);
-		HitBoxesToScan.push_back((int)CSGOHitboxID::LOWER_CHEST);
-		HitBoxesToScan.push_back((int)CSGOHitboxID::PELVIS);
-		HitBoxesToScan.push_back((int)CSGOHitboxID::BELLY);
-
-		HitBoxesToScan.push_back((int)CSGOHitboxID::THORAX);
-		HitBoxesToScan.push_back((int)CSGOHitboxID::LEFT_THIGH);
-		HitBoxesToScan.push_back((int)CSGOHitboxID::RIGHT_THIGH);
-		HitBoxesToScan.push_back((int)CSGOHitboxID::LEFT_CALF);
-		HitBoxesToScan.push_back((int)CSGOHitboxID::RIGHT_CALF);
-
-		HitBoxesToScan.push_back((int)CSGOHitboxID::RIGHT_FOOT);
-		HitBoxesToScan.push_back((int)CSGOHitboxID::LEFT_FOOT);
-		HitBoxesToScan.push_back((int)CSGOHitboxID::RIGHT_HAND);
-		HitBoxesToScan.push_back((int)CSGOHitboxID::LEFT_HAND);
+	}
+	if (Menu.Ragebot.Hitscan_Bone[HITSCAN::SCAN_ARMS]) {
 		HitBoxesToScan.push_back((int)CSGOHitboxID::RIGHT_UPPER_ARM);
 		HitBoxesToScan.push_back((int)CSGOHitboxID::RIGHT_FOREARM);
 		HitBoxesToScan.push_back((int)CSGOHitboxID::LEFT_UPPER_ARM);
 		HitBoxesToScan.push_back((int)CSGOHitboxID::LEFT_FOREARM);
 	}
-	break;
+	if (Menu.Ragebot.Hitscan_Bone[HITSCAN::SCAN_FISTS]) {
+		HitBoxesToScan.push_back((int)CSGOHitboxID::RIGHT_HAND);
+		HitBoxesToScan.push_back((int)CSGOHitboxID::LEFT_HAND);
 	}
+	if (Menu.Ragebot.Hitscan_Bone[HITSCAN::SCAN_LEGS]) {
+		HitBoxesToScan.push_back((int)CSGOHitboxID::LEFT_THIGH);
+		HitBoxesToScan.push_back((int)CSGOHitboxID::RIGHT_THIGH);
+		HitBoxesToScan.push_back((int)CSGOHitboxID::LEFT_CALF);
+		HitBoxesToScan.push_back((int)CSGOHitboxID::RIGHT_CALF);
+	}
+	if (Menu.Ragebot.Hitscan_Bone[HITSCAN::SCAN_FEET]) {
+		HitBoxesToScan.push_back((int)CSGOHitboxID::RIGHT_FOOT);
+		HitBoxesToScan.push_back((int)CSGOHitboxID::LEFT_FOOT);
+	}
+	//switch (HitScanMode) {
+	//case 0:
+	//	break;
+	//case 1:
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::HEAD);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::NECK);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::UPPER_CHEST);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::PELVIS);
+	//	break;
+	//case 2:
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::HEAD);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::NECK);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::UPPER_CHEST);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::PELVIS);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::BELLY);
+
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::THORAX);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::LEFT_THIGH);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::RIGHT_THIGH);
+	//case 3:
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::HEAD);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::NECK);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::UPPER_CHEST);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::LOWER_CHEST);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::PELVIS);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::BELLY);
+
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::THORAX);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::LEFT_THIGH);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::RIGHT_THIGH);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::LEFT_CALF);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::RIGHT_CALF);
+	//	break;
+	//case 4:
+	//{
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::HEAD);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::NECK);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::UPPER_CHEST);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::LOWER_CHEST);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::PELVIS);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::BELLY);
+
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::THORAX);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::LEFT_THIGH);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::RIGHT_THIGH);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::LEFT_CALF);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::RIGHT_CALF);
+
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::RIGHT_FOOT);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::LEFT_FOOT);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::RIGHT_HAND);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::LEFT_HAND);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::RIGHT_UPPER_ARM);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::RIGHT_FOREARM);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::LEFT_UPPER_ARM);
+	//	HitBoxesToScan.push_back((int)CSGOHitboxID::LEFT_FOREARM);
+	//}
+	//break;
+	//}
 
 	return HitBoxesToScan;
 }
@@ -207,7 +252,7 @@ void Restore(CBaseEntity* ent)
 
 Vector RunAimScan(CBaseEntity* pTarget, float &simtime, Vector& origin)
 {
-	Vector vEyePos = csgo::LocalPlayer->GetEyePosition();
+	Vector vEyePos = g::LocalPlayer->GetEyePosition();
 	static float minimum_damage = 1.f;
 	if (Menu.Ragebot.Mindamage == 0)
 		minimum_damage = pTarget->GetHealth();
@@ -230,10 +275,10 @@ Vector RunAimScan(CBaseEntity* pTarget, float &simtime, Vector& origin)
 
 			int hitgroup = -1;
 
-			if (g_pEngineTrace->IsVisible(csgo::LocalPlayer, vEyePos, hitbox, pTarget, hitgroup)) {
-				float modified_damage = csgo::MainWeapon->GetCSWpnData()->damage * (float)pow(csgo::MainWeapon->GetCSWpnData()->range_modifier, csgo::MainWeapon->GetCSWpnData()->range * 0.002);
+			if (g_pEngineTrace->IsVisible(g::LocalPlayer, vEyePos, hitbox, pTarget, hitgroup)) {
+				float modified_damage = g::MainWeapon->GetCSWpnData()->damage * (float)pow(g::MainWeapon->GetCSWpnData()->range_modifier, g::MainWeapon->GetCSWpnData()->range * 0.002);
 
-				ScaleDamage(hitgroup, pTarget, csgo::MainWeapon->GetCSWpnData()->armor_ratio, modified_damage);
+				ScaleDamage(hitgroup, pTarget, g::MainWeapon->GetCSWpnData()->armor_ratio, modified_damage);
 
 				if (hitbox.IsValid() && modified_damage >= minimum_damage)
 					return hitbox;
@@ -260,25 +305,21 @@ Vector RunAimScan(CBaseEntity* pTarget, float &simtime, Vector& origin)
 
 				int hitgroup = -1;
 
-				if (g_pEngineTrace->IsVisible(csgo::LocalPlayer, vEyePos, hit_vector, pTarget, hitgroup)) {
-					float modified_damage = csgo::MainWeapon->GetCSWpnData()->damage * (float)pow(csgo::MainWeapon->GetCSWpnData()->range_modifier, csgo::MainWeapon->GetCSWpnData()->range * 0.002);
+				if (g_pEngineTrace->IsVisible(g::LocalPlayer, vEyePos, hit_vector, pTarget, hitgroup)) {
+					float modified_damage = g::MainWeapon->GetCSWpnData()->damage * (float)pow(g::MainWeapon->GetCSWpnData()->range_modifier, g::MainWeapon->GetCSWpnData()->range * 0.002);
 
-					ScaleDamage(hitgroup, pTarget, csgo::MainWeapon->GetCSWpnData()->armor_ratio, modified_damage);
+					ScaleDamage(hitgroup, pTarget, g::MainWeapon->GetCSWpnData()->armor_ratio, modified_damage);
 
 					if (hit_vector.IsValid() && modified_damage >= minimum_damage)
 						return hit_vector;
 				}
 				else {
-					if (i == 0)
-					{
-						//SetRecords(pTarget, record);
+					//SetRecords(pTarget, record);
 
-						if (Menu.Ragebot.Autowall && g_Autowall->PenetrateWall(pTarget, hit_vector) && hit_vector.IsValid())
-							return hit_vector;
+					if (Menu.Ragebot.Autowall && g_Autowall->PenetrateWall(pTarget, hit_vector) && hit_vector.IsValid())
+						return hit_vector;
 
 					//	Restore(pTarget);
-					}
-
 				}
 			}
 		}
@@ -292,7 +333,7 @@ Vector RunAimScan(CBaseEntity* pTarget, float &simtime, Vector& origin)
 		origin = pTarget->GetOrigin();
 
 		for (auto HitBox : GameUtils::GetMultiplePointsForHitbox(pTarget, Menu.Ragebot.Hitbox, BoneMatrix)) {
-			if (g_pEngineTrace->IsVisible(csgo::LocalPlayer, vEyePos, HitBox, pTarget) && !HitBox.IsZero())
+			if (g_pEngineTrace->IsVisible(g::LocalPlayer, vEyePos, HitBox, pTarget) && !HitBox.IsZero())
 				return HitBox;
 			else {
 				if (Menu.Ragebot.Autowall && g_Autowall->PenetrateWall(pTarget, HitBox) && !HitBox.IsZero())
@@ -314,7 +355,7 @@ Vector RunAimScan(CBaseEntity* pTarget, float &simtime, Vector& origin)
 				float damage = 0.f;
 
 				int hitgroup = -1;
-				if (g_pEngineTrace->IsVisible(csgo::LocalPlayer, vEyePos, vPoint, pTarget, hitgroup)) {
+				if (g_pEngineTrace->IsVisible(g::LocalPlayer, vEyePos, vPoint, pTarget, hitgroup)) {
 					if (vPoint != Vector(0, 0, 0))
 						return vPoint;
 				}
@@ -346,52 +387,52 @@ void CAimbot::DropTarget()
 }
 
 float get_curtime1() {
-	if (!csgo::LocalPlayer)
+	if (!g::LocalPlayer)
 		return 0;
 
 	int g_tick = 0;
 	CUserCmd* g_pLastCmd = nullptr;
 	if (!g_pLastCmd || g_pLastCmd->hasbeenpredicted) {
-		g_tick = csgo::LocalPlayer->GetTickBase();
+		g_tick = g::LocalPlayer->GetTickBase();
 	}
 	else {
 		++g_tick;
 	}
-	g_pLastCmd = csgo::UserCmd;
+	g_pLastCmd = g::UserCmd;
 	float curtime = g_tick * g_pGlobals->interval_per_tick;
 	return curtime;
 }
 
 void AutoZeus()
 {
-	for (int i = 1; i <= g_pGlobals->maxClients; i++)
+	for (int i = 1; i < 65; i++)
 	{
 		CBaseEntity *entity = g_pEntitylist->GetClientEntity(i);
 		if (!entity
-			|| entity == csgo::LocalPlayer
+			|| entity == g::LocalPlayer
 			|| entity->IsDormant()
 			|| !entity->isAlive()
 			|| entity->IsProtected()
 			|| !entity->IsPlayer()
-			|| entity->GetTeamNum() == csgo::LocalPlayer->GetTeamNum()
+			|| entity->GetTeamNum() == g::LocalPlayer->GetTeamNum()
 			|| !(*entity->GetFlags() & FL_ONGROUND))
 			continue;
 
 		Vector traceStart, traceEnd;
 		QAngle viewAngles;
 		g_pEngine->GetViewAngles(viewAngles);
-		QAngle viewAnglesRcs = viewAngles + csgo::LocalPlayer->GetPunchAngle() * 2.0f;
+		QAngle viewAnglesRcs = viewAngles + g::LocalPlayer->GetPunchAngle() * 2.0f;
 
 		Math::AngleVectors(viewAnglesRcs, &traceEnd);
 
-		traceStart = csgo::LocalPlayer->GetEyePosition();
+		traceStart = g::LocalPlayer->GetEyePosition();
 		traceEnd = traceStart + (traceEnd * 8192.0f);
 
 		Ray_t ray;
 		trace_t Trace;
 		ray.Init(traceStart, traceEnd);
 		CTraceFilter traceFilter;
-		traceFilter.pSkip1 = csgo::LocalPlayer;
+		traceFilter.pSkip1 = g::LocalPlayer;
 		g_pEngineTrace->TraceRay(ray, 0x46004003, &traceFilter, &Trace);
 
 		if (!Trace.m_pEnt)
@@ -399,10 +440,10 @@ void AutoZeus()
 		if (!Trace.m_pEnt->IsValidTarget())
 			return;
 
-		float playerDistance = csgo::LocalPlayer->GetOrigin().DistTo(entity->GetOrigin());
-		if (csgo::MainWeapon->NextPrimaryAttack() < get_curtime1()) {
+		float playerDistance = g::LocalPlayer->GetOrigin().DistTo(entity->GetOrigin());
+		if (g::MainWeapon->NextPrimaryAttack() < get_curtime1()) {
 			if (playerDistance <= 184.f)
-				csgo::UserCmd->buttons |= IN_ATTACK;
+				g::UserCmd->buttons |= IN_ATTACK;
 		}
 	}
 }
@@ -412,7 +453,7 @@ void CAimbot::Run()
 	if (!Menu.Ragebot.EnableAimbot)
 		return;
 
-	CBaseCombatWeapon* pWeapon = csgo::LocalPlayer->GetWeapon();
+	CBaseCombatWeapon* pWeapon = g::LocalPlayer->GetWeapon();
 
 	if (!pWeapon || pWeapon->Clip1() == 0 || pWeapon->IsMiscWeapon() || !GameUtils::IsAbleToShoot())
 		return;
@@ -421,15 +462,15 @@ void CAimbot::Run()
 
 	if (Menu.Ragebot.AutomaticRevolver)
 	{
-		if (csgo::MainWeapon->WeaponID() == ItemDefinitionIndex::REVOLVER)
+		if (g::MainWeapon->WeaponID() == ItemDefinitionIndex::REVOLVER)
 		{
-			csgo::UserCmd->buttons |= IN_ATTACK;
-			float flPostponeFireReady = csgo::MainWeapon->GetPostponeFireReadyTime();
+			g::UserCmd->buttons |= IN_ATTACK;
+			float flPostponeFireReady = g::MainWeapon->GetPostponeFireReadyTime();
 			if (flPostponeFireReady > 0 && flPostponeFireReady < get_curtime1())
 			{
-				csgo::UserCmd->buttons &= ~IN_ATTACK;
+				g::UserCmd->buttons &= ~IN_ATTACK;
 				if (Menu.Ragebot.NewAutomaticRevolver && flPostponeFireReady + g_pGlobals->interval_per_tick * Menu.Ragebot.NewAutomaticRevolverFactor > get_curtime1())
-					csgo::UserCmd->buttons |= IN_ATTACK2;
+					g::UserCmd->buttons |= IN_ATTACK2;
 			}
 		}
 	}
@@ -443,9 +484,9 @@ void CAimbot::Run()
 		if (!target->IsValidTarget())
 			continue;
 
-		csgo::Target = target;
+		g::Target = target;
 
-		float fov = GameUtils::GetFoV(view, csgo::LocalPlayer->GetEyePosition(), target->GetEyePosition(), false);
+		float fov = GameUtils::GetFoV(view, g::LocalPlayer->GetEyePosition(), target->GetEyePosition(), false);
 		if (fov > 180.f)
 			continue;
 
@@ -455,8 +496,7 @@ void CAimbot::Run()
 		if (aim_position == Vector(0, 0, 0))
 			continue;
 
-		float selection_value = 0;
-		selection_value = fov;
+		float selection_value = fov;
 
 		if (best_distance >= selection_value && aim_position != Vector(0, 0, 0))
 		{
@@ -472,64 +512,81 @@ void CAimbot::Run()
 	if (target_index != -1 && current_aim_position != Vector(0, 0, 0) && pTarget)
 	{
 		aimbotted_in_current_tick = true;
-
-		QAngle aim = GameUtils::CalculateAngle(csgo::LocalPlayer->GetEyePosition(), current_aim_position);
+		this->aimbotted = true;
+		QAngle aim = GameUtils::CalculateAngle(g::LocalPlayer->GetEyePosition(), current_aim_position);
 
 		aim.y = Math::NormalizeYaw(aim.y);
 
-		csgo::UserCmd->viewangles = aim;
+		g::UserCmd->viewangles = aim;
 
 		if (!Menu.Ragebot.SilentAimbot)
-			g_pEngine->SetViewAngles(csgo::UserCmd->viewangles);
+			g_pEngine->SetViewAngles(g::UserCmd->viewangles);
 
 		if (Menu.Ragebot.AutomaticFire)
 		{
-			if (Menu.Ragebot.AutomaticScope && pWeapon->IsScopeable() && !csgo::LocalPlayer->IsScoped())
-				csgo::UserCmd->buttons |= IN_ATTACK2;
+			if (Menu.Ragebot.AutomaticScope && pWeapon->IsScopeable() && !g::LocalPlayer->IsScoped())
+				g::UserCmd->buttons |= IN_ATTACK2;
 			else
 			{
-				if (Menu.Ragebot.Minhitchance == 0 || hitchance(csgo::UserCmd->viewangles, pTarget, Menu.Ragebot.Minhitchance))
+				if (Menu.Ragebot.Minhitchance == 0 || hitchance(g::UserCmd->viewangles, pTarget, Menu.Ragebot.Minhitchance))
 				{
-					csgo::UserCmd->buttons |= IN_ATTACK;
+					g::SendPacket = true;
+					g::UserCmd->buttons |= IN_ATTACK;
 					this->fired_in_that_tick = true;
+					
 					data[pTarget->GetIndex()].shoots++;
 				}
 			}
 		}
 
-		if (csgo::UserCmd->buttons & IN_ATTACK)
-		{
-			this->aimbotted = true;
-		}
-
-		if (*csgo::MainWeapon->ItemDefinitionIndex() == WEAPON_TASER)
+		if (*g::MainWeapon->ItemDefinitionIndex() == WEAPON_TASER)
 		{
 			if (Menu.Misc.ZeusBot) {
 				AutoZeus();
 			}
 		}
 
-		csgo::UserCmd->tick_count = TIME_TO_TICKS(current_aim_simulationtime + g_BacktrackHelper->GetLerpTime());// for backtracking
+		static int old_tick = g::UserCmd->tick_count;
+
+		if (Menu.Ragebot.PositionAdjustment)
+			g::UserCmd->tick_count = TIME_TO_TICKS(current_aim_simulationtime + g_BacktrackHelper->GetLerpTime());// for backtracking
+		else
+			g::UserCmd->tick_count = old_tick;
 	}
+
+	if ((g::UserCmd->buttons & IN_ATTACK || g::UserCmd->buttons & IN_ATTACK2 && g::MainWeapon->WeaponID() == REVOLVER) && (g::MainWeapon->IsPistol() || g::MainWeapon->WeaponID() == AWP || g::MainWeapon->WeaponID() == SSG08))
+	{
+		static bool bFlip = false;
+		if (bFlip)
+		{
+			if (g::MainWeapon->WeaponID() == REVOLVER)
+			{
+			}
+			else
+				g::UserCmd->buttons &= ~IN_ATTACK;
+		}
+		bFlip = !bFlip;
+	}
+
 }
 
 void CAimbot::CompensateInaccuracies()
 {
-	if (csgo::UserCmd->buttons & IN_ATTACK)
+	if (g::UserCmd->buttons & IN_ATTACK)
 	{
 		if (Menu.Ragebot.NoRecoil)
 		{
 			ConVar* recoilscale = g_pCvar->FindVar("weapon_recoil_scale");
 
 			if (recoilscale) {
-				QAngle qPunchAngles = csgo::LocalPlayer->GetPunchAngle();
-				QAngle qAimAngles = csgo::UserCmd->viewangles;
+				QAngle qPunchAngles = g::LocalPlayer->GetPunchAngle();
+				QAngle qAimAngles = g::UserCmd->viewangles;
 				qAimAngles -= qPunchAngles * recoilscale->GetFloat();
-				csgo::UserCmd->viewangles = qAimAngles;
+				g::UserCmd->viewangles = qAimAngles;
 			}
 		}
 
 		if (Menu.Ragebot.NoSpread)
-			csgo::UserCmd->viewangles = g_NoSpread->SpreadFactor(csgo::UserCmd->random_seed);
+			g::UserCmd->viewangles = g_NoSpread->SpreadFactor(g::UserCmd->random_seed);
 	}
 }

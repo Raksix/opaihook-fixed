@@ -6,75 +6,75 @@
 /*---------------------ENGINE & UTIL CLASSES---------------------*/
 CDataMapUtils* g_pData = new CDataMapUtils;
 CEncryption* g_pEncrypt = new CEncryption;
-CBaseEntity* csgo::LocalPlayer = nullptr;
-CBaseCombatWeapon* csgo::MainWeapon = nullptr;
-CSWeaponInfo* csgo::WeaponData = nullptr;
-CUserCmd*	csgo::UserCmd = nullptr;
-CUserCmd* csgo::UserCmdForBacktracking = nullptr;
-CBaseEntity* csgo::Target = nullptr;
+CBaseEntity* g::LocalPlayer = nullptr;
+CBaseCombatWeapon* g::MainWeapon = nullptr;
+CSWeaponInfo* g::WeaponData = nullptr;
+CUserCmd*	g::UserCmd = nullptr;
+CUserCmd* g::UserCmdForBacktracking = nullptr;
+CBaseEntity* g::Target = nullptr;
 CPlayerlistInfo* g_pPlayerlistInfo[64] = { nullptr };
-std::deque<std::tuple<Vector, float, Color>> csgo::hitscan_points;
+std::deque<std::tuple<Vector, float, Color>> g::hitscan_points;
 /*---------------------QANGLE---------------------*/
-QAngle csgo::LastAngle = QAngle();
-QAngle csgo::AAAngle = QAngle();
-QAngle csgo::StrafeAngle = QAngle();
-QAngle csgo::RealAngle = QAngle();
-vec_t csgo::PitchAngle = vec_t();
-QAngle csgo::FakeAngle = QAngle();
+QAngle g::LastAngle = QAngle();
+QAngle g::AAAngle = QAngle();
+QAngle g::StrafeAngle = QAngle();
+QAngle g::RealAngle = QAngle();
+vec_t g::PitchAngle = vec_t();
+QAngle g::FakeAngle = QAngle();
 
 /*---------------------BOOLEAN---------------------*/
-bool csgo::Aimbotting = false;
-bool csgo::IsDef  = strstr(GetCommandLineA(), "-legacyscaleformui");
-bool csgo::BreakingLagComp = false;
-bool csgo::Return = true;
-bool csgo::ForceRealAA = false;
-bool csgo::SendPacket = true;
-bool csgo::InNotAntiAim = true;
-bool csgo::ShowMenu = false;
-bool csgo::Opened = false;
-bool csgo::NewRound = false;
-bool csgo::Init = false;
-bool csgo::weaponfirecalled = false;
-bool csgo::playerhurtcalled = false;
-bool csgo::walkbotenabled = false;
-bool csgo::bShouldChoke = false;
-bool csgo::bFakewalking = false;
-bool csgo::lby = false;
+bool g::Aimbotting = false;
+bool g::IsDef  = strstr(GetCommandLineA(), "-legacyscaleformui");
+bool g::BreakingLagComp = false;
+bool g::Return = true;
+bool g::ForceRealAA = false;
+bool g::SendPacket = true;
+bool g::InNotAntiAim = true;
+bool g::ShowMenu = false;
+bool g::Opened = false;
+bool g::NewRound = false;
+bool g::Init = false;
+bool g::weaponfirecalled = false;
+bool g::playerhurtcalled = false;
+bool g::walkbotenabled = false;
+bool g::bShouldChoke = false;
+bool g::bFakewalking = false;
+bool g::lby = false;
 
 /*---------------------INTEGER---------------------*/
-int csgo::wbpoints = -1;
-int csgo::localtime;
-int csgo::chokedticks;
-int csgo::wbcurpoint = 0;
-int csgo::ChokedPackets = 0;
-int csgo::DamageDealt;
-int csgo::ResolverMode[64];
-int csgo::FakeDetection[64];
-int csgo::Shots[64];
-int csgo::MenuTab;
-int csgo::nChokedTicks = 0;
-int csgo::missed_shots[64];
-int csgo::TargetIDO = -1;
+int g::wbpoints = -1;
+//int g::localtime;
+int g::chokedticks;
+int g::wbcurpoint = 0;
+int g::ChokedPackets = 0;
+int g::DamageDealt;
+int g::ResolverMode[64];
+int g::FakeDetection[64];
+int g::Shots[64];
+int g::MenuTab;
+int g::nChokedTicks = 0;
+int g::missed_shots[64];
+int g::TargetIDO = -1;
 
 /*---------------------FLOATING POINT---------------------*/
-float csgo::PredictedTime = 0.f;
-float csgo::lby_update_end_time;
-float csgo::CurrTime;
-float csgo::flHurtTime;
-float csgo::spread;
-float csgo::viewMatrix[4][4] = { 0 };
+float g::PredictedTime = 0.f;
+float g::lby_update_end_time;
+float g::CurrTime;
+float g::flHurtTime;
+float g::spread;
+float g::viewMatrix[4][4] = { 0 };
 /*---------------------D3DX DEFINES---------------------*/
-HWND csgo::Window = nullptr;
-CScreen csgo::Screen = CScreen();
+HWND g::Window = nullptr;
+CScreen g::Screen = CScreen();
 
 /*---------------------STANDARD VECTOR MAPS---------------------*/
-std::vector<FloatingText> csgo::DamageHit;
-std::vector<Vector> csgo::walkpoints;
-std::string csgo::resolvermode;
+std::vector<FloatingText> g::DamageHit;
+std::vector<Vector> g::walkpoints;
+std::string g::resolvermode;
 
 /*---------------------VECTOR---------------------*/
-Vector csgo::vecUnpredictedVel = Vector(0, 0, 0);
-Vector csgo::fakeOrigin = Vector(0, 0, 0);
+Vector g::vecUnpredictedVel = Vector(0, 0, 0);
+Vector g::fakeOrigin = Vector(0, 0, 0);
 
 
 itemTimer::itemTimer() {
@@ -108,7 +108,7 @@ void itemTimer::setMaxTime(float time) {
 
 FloatingText::FloatingText(CBaseEntity* attachEnt, float lifetime, int Damage)
 {
-	TimeCreated = csgo::CurrTime;
+	TimeCreated = g::CurrTime;
 	ExpireTime = TimeCreated + lifetime;
 	pEnt = attachEnt;
 	DamageAmt = Damage;
@@ -126,18 +126,12 @@ void FloatingText::Draw()
 	if (GameUtils::WorldToScreen(head, screen))
 	{
 		auto lifetime = ExpireTime - TimeCreated;
-		auto pct = 1 - ((ExpireTime - csgo::CurrTime) / lifetime);
+		auto pct = 1 - ((ExpireTime - g::CurrTime) / lifetime);
 		int offset = pct * 50;
 		int y = screen.y - 15 - offset;
 
-		if (DamageAmt >= 100)
-		{
-			draw::Textf(screen.x, y, Color(Red, Green, Blue, 255), F::esp, "-%i", DamageAmt);
-		}
-		else
-		{
-			draw::Textf(screen.x, y, Color(Red, Green, Blue, 255), F::esp, "-%i", DamageAmt);
-		}
+		string str = "- " +std::to_string(DamageAmt) + " HP";
+		draw::Textf(screen.x, y, Color(Red, Green, Blue, 255), F::esp, str.c_str());
 	}
 }
 

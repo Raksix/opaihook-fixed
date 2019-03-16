@@ -32,7 +32,7 @@ extern IViewRenderBeams* g_pViewRenderBeams;
 #include "Utilities.h"
 #include "global.h"
 
-#define client_dll  /*csgo::IsDef ? "client.dll" : */"client_panorama.dll"
+#define client_dll  /*g::IsDef ? "client.dll" : */"client_panorama.dll"
 
 class CInterfaces
 {

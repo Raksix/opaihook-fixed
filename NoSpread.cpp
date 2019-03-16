@@ -108,18 +108,18 @@ Vector CNoSpread::SpreadFactor(int seed)
 
 	Vector vecForward, vecRight, vecDir, vecUp, vecAntiDir;
 	float flSpread, flInaccuracy;
-	Vector qAntiSpread = csgo::UserCmd->viewangles;
+	Vector qAntiSpread = g::UserCmd->viewangles;
 
 
-	csgo::MainWeapon->UpdateAccuracyPenalty();
+	g::MainWeapon->UpdateAccuracyPenalty();
 
-	flSpread = csgo::MainWeapon->GetSpread();
+	flSpread = g::MainWeapon->GetSpread();
 
-	flInaccuracy = csgo::MainWeapon->GetInaccuracy();
-	if (seed == csgo::UserCmd->random_seed)
+	flInaccuracy = g::MainWeapon->GetInaccuracy();
+	if (seed == g::UserCmd->random_seed)
 	{
-		csgo::UserCmd->random_seed = MD5_PseudoRandom(csgo::UserCmd->command_number) & 0x7FFFFFFF;
-		RandomSeed((csgo::UserCmd->random_seed & 0xFF) + 1);
+		g::UserCmd->random_seed = MD5_PseudoRandom(g::UserCmd->command_number) & 0x7FFFFFFF;
+		RandomSeed((g::UserCmd->random_seed & 0xFF) + 1);
 	}
 	else
 	{
@@ -133,18 +133,18 @@ Vector CNoSpread::SpreadFactor(int seed)
 	float fRand2 = RandomFloat(0.f, 1.f);
 	float fRandPi2 = RandomFloat(0.f, 2.f * (float)M_PI);
 
-	float m_flRecoilIndex = csgo::MainWeapon->GetFloatRecoilIndex();
+	float m_flRecoilIndex = g::MainWeapon->GetFloatRecoilIndex();
 
 
-	if (csgo::MainWeapon->WeaponID() == 64)
+	if (g::MainWeapon->WeaponID() == 64)
 	{
-		if (csgo::UserCmd->buttons & IN_ATTACK2)
+		if (g::UserCmd->buttons & IN_ATTACK2)
 		{
 			fRand1 = 1.f - fRand1 * fRand1;
 			fRand2 = 1.f - fRand2 * fRand2;
 		}
 	}
-	else if (csgo::MainWeapon->WeaponID() == NEGEV && m_flRecoilIndex < 3.f)
+	else if (g::MainWeapon->WeaponID() == NEGEV && m_flRecoilIndex < 3.f)
 	{
 		for (int i = 3; i > m_flRecoilIndex; --i)
 		{
@@ -156,13 +156,13 @@ Vector CNoSpread::SpreadFactor(int seed)
 		fRand2 = 1.f - fRand2;
 	}
 
-	float fRandInaccuracy = fRand1 * csgo::MainWeapon->GetInaccuracy();
-	float fRandSpread = fRand2 * csgo::MainWeapon->GetSpread();
+	float fRandInaccuracy = fRand1 * g::MainWeapon->GetInaccuracy();
+	float fRandSpread = fRand2 * g::MainWeapon->GetSpread();
 
 	float fSpreadX = cos(fRandPi1) * fRandInaccuracy + cos(fRandPi2) * fRandSpread;
 	float fSpreadY = sin(fRandPi1) * fRandInaccuracy + sin(fRandPi2) * fRandSpread;
 
-	AngleToVectors(csgo::UserCmd->viewangles, &vecForward, &vecRight, &vecUp);
+	AngleToVectors(g::UserCmd->viewangles, &vecForward, &vecRight, &vecUp);
 
 	vecDir.x = (float)((float)(vecRight.x * fSpreadX) + vecForward.x) + (float)(vecUp.x * fSpreadY);
 	vecDir.y = (float)((float)(fSpreadX * vecRight.y) + vecForward.y) + (float)(fSpreadY * vecUp.y);
@@ -189,13 +189,13 @@ void CNoSpread::NoSpread(CUserCmd* pCmd)
 	float flSpread, flInaccuracy;
 	Vector qAntiSpread;
 
-	csgo::MainWeapon->UpdateAccuracyPenalty();
+	g::MainWeapon->UpdateAccuracyPenalty();
 
-	flSpread = csgo::MainWeapon->GetSpread();
+	flSpread = g::MainWeapon->GetSpread();
 
-	flInaccuracy = csgo::MainWeapon->GetInaccuracy();
-	csgo::UserCmd->random_seed = MD5_PseudoRandom(csgo::UserCmd->command_number) & 0x7FFFFFFF;
-	RandomSeed((csgo::UserCmd->random_seed & 0xFF) + 1);
+	flInaccuracy = g::MainWeapon->GetInaccuracy();
+	g::UserCmd->random_seed = MD5_PseudoRandom(g::UserCmd->command_number) & 0x7FFFFFFF;
+	RandomSeed((g::UserCmd->random_seed & 0xFF) + 1);
 
 
 	float fRand1 = RandomFloat(0.f, 1.f);
@@ -203,18 +203,18 @@ void CNoSpread::NoSpread(CUserCmd* pCmd)
 	float fRand2 = RandomFloat(0.f, 1.f);
 	float fRandPi2 = RandomFloat(0.f, 2.f * (float)M_PI);
 
-	float m_flRecoilIndex = csgo::MainWeapon->GetFloatRecoilIndex();
+	float m_flRecoilIndex = g::MainWeapon->GetFloatRecoilIndex();
 
 
-	if (csgo::MainWeapon->WeaponID() == 64)
+	if (g::MainWeapon->WeaponID() == 64)
 	{
-		if (csgo::UserCmd->buttons & IN_ATTACK2)
+		if (g::UserCmd->buttons & IN_ATTACK2)
 		{
 			fRand1 = 1.f - fRand1 * fRand1;
 			fRand2 = 1.f - fRand2 * fRand2;
 		}
 	}
-	else if (csgo::MainWeapon->WeaponID() == NEGEV && m_flRecoilIndex < 3.f)
+	else if (g::MainWeapon->WeaponID() == NEGEV && m_flRecoilIndex < 3.f)
 	{
 		for (int i = 3; i > m_flRecoilIndex; --i)
 		{
@@ -226,8 +226,8 @@ void CNoSpread::NoSpread(CUserCmd* pCmd)
 		fRand2 = 1.f - fRand2;
 	}
 
-	float fRandInaccuracy = fRand1 * csgo::MainWeapon->GetInaccuracy();
-	float fRandSpread = fRand2 * csgo::MainWeapon->GetSpread();
+	float fRandInaccuracy = fRand1 * g::MainWeapon->GetInaccuracy();
+	float fRandSpread = fRand2 * g::MainWeapon->GetSpread();
 
 	float fSpreadX = cos(fRandPi1) * fRandInaccuracy + cos(fRandPi2) * fRandSpread;
 	float fSpreadY = sin(fRandPi1) * fRandInaccuracy + sin(fRandPi2) * fRandSpread;
@@ -363,7 +363,7 @@ void CNoSpread::CalcServer(Vector vSpreadVec, Vector ViewIn, Vector &vecSpreadDi
 
 void CNoSpread::GetSpreadVec(CUserCmd*pCmd, Vector &vSpreadVec)
 {
-	CBaseEntity* self = csgo::LocalPlayer;
+	CBaseEntity* self = g::LocalPlayer;
 
 	if (!self)
 		return;
@@ -384,17 +384,17 @@ void CNoSpread::GetSpreadVec(CUserCmd*pCmd, Vector &vSpreadVec)
 	float fRand2 = Random->RandomFloat(0.f, 1.f);
 	float fRandPi2 = Random->RandomFloat(0.f, 2.f * (float)M_PI);
 
-	float m_flRecoilIndex = csgo::MainWeapon->GetFloatRecoilIndex();
+	float m_flRecoilIndex = g::MainWeapon->GetFloatRecoilIndex();
 
-	if (csgo::MainWeapon->WeaponID() == 64)
+	if (g::MainWeapon->WeaponID() == 64)
 	{
-		if (csgo::UserCmd->buttons & IN_ATTACK2)
+		if (g::UserCmd->buttons & IN_ATTACK2)
 		{
 			fRand1 = 1.f - fRand1 * fRand1;
 			fRand2 = 1.f - fRand2 * fRand2;
 		}
 	}
-	else if (csgo::MainWeapon->WeaponID() == NEGEV && m_flRecoilIndex < 3.f)
+	else if (g::MainWeapon->WeaponID() == NEGEV && m_flRecoilIndex < 3.f)
 	{
 		for (int i = 3; i > m_flRecoilIndex; --i)
 		{
@@ -461,7 +461,7 @@ void CNoSpread::CompensateInAccuracyNumeric(CUserCmd*cmd)
 		cmd->viewangles = qAntiSpread;
 	}
 
-	cmd->viewangles -= csgo::LocalPlayer->GetPunchAngle() * 2;
+	cmd->viewangles -= g::LocalPlayer->GetPunchAngle() * 2;
 }
 #define square( x ) ( x * x ) 
 
@@ -536,17 +536,17 @@ void CNoSpread::RollSpread(CBaseCombatWeapon*localWeap, int seed, CUserCmd*cmd, 
 	float fRand2 = Random->RandomFloat(0.f, 1.f);
 	float fRandPi2 = Random->RandomFloat(0.f, 2.f * (float)M_PI);
 
-	float m_flRecoilIndex = csgo::MainWeapon->GetFloatRecoilIndex();
+	float m_flRecoilIndex = g::MainWeapon->GetFloatRecoilIndex();
 
-	if (csgo::MainWeapon->WeaponID() == 64)
+	if (g::MainWeapon->WeaponID() == 64)
 	{
-		if (csgo::UserCmd->buttons & IN_ATTACK2)
+		if (g::UserCmd->buttons & IN_ATTACK2)
 		{
 			fRand1 = 1.f - fRand1 * fRand1;
 			fRand2 = 1.f - fRand2 * fRand2;
 		}
 	}
-	else if (csgo::MainWeapon->WeaponID() == NEGEV && m_flRecoilIndex < 3.f)
+	else if (g::MainWeapon->WeaponID() == NEGEV && m_flRecoilIndex < 3.f)
 	{
 		for (int i = 3; i > m_flRecoilIndex; --i)
 		{

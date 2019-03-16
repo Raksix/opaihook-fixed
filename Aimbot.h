@@ -2,7 +2,6 @@
 class CAimbot
 {
 public:
-	bool HitChance(CBaseEntity * pCSTarget, CBaseCombatWeapon * pCSWeapon, QAngle qAngle, int chance);
 	void DropTarget();
 	void Run();
 	void CompensateInaccuracies();

@@ -80,8 +80,6 @@ CVMTHookManager* g_pSurfaceHook = nullptr;
 CVMTHookManager* g_pClientModeHook = nullptr;
 CVMTHookManager* tracehk = nullptr;
 
-HMODULE h_ThisModule;
-
 void Init()
 {
 	SetupOffsets();
@@ -132,7 +130,7 @@ void Init()
 	g_pSurfaceHook = new CVMTHookManager(reinterpret_cast<DWORD**>(g_pSurface));
 	oLockCursor = reinterpret_cast<LockCursor_t>(g_pSurfaceHook->HookMethod(reinterpret_cast<DWORD>(Hooks::hk_lockcursor), 67));
 
-	Hooks::g_pOldWindowProc = (WNDPROC)SetWindowLongPtr(csgo::Window, GWLP_WNDPROC, (LONG_PTR)Hooks::WndProc);
+	Hooks::g_pOldWindowProc = (WNDPROC)SetWindowLongPtr(g::Window, GWLP_WNDPROC, (LONG_PTR)Hooks::WndProc);
 
 	FakeLatency::ClientState = *(DWORD*)(FindPatternIDA("engine.dll", "8B 3D ? ? ? ? 8A F9") + 2);
 
@@ -155,7 +153,7 @@ BOOL WINAPI DllMain(HINSTANCE Instance, DWORD dwReason, LPVOID lpReserved)
 	{
 	case DLL_PROCESS_ATTACH:
 		DisableThreadLibraryCalls(Instance);
-		csgo::Window = FindWindowA(("Valve001"), 0);
+		g::Window = FindWindowA(("Valve001"), 0);
 		CreateThread(0, 0, (LPTHREAD_START_ROUTINE)StartCheat, 0, 0, 0);
 		break;
 	}

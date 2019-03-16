@@ -70,7 +70,7 @@ LRESULT __stdcall Hooks::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		}
 
 	}
-	if (csgo::Init && Menu.Gui.Opened && ImGui_ImplDX9_WndProcHandler(hWnd, uMsg, wParam, lParam))
+	if (g::Init && Menu.Gui.Opened && ImGui_ImplDX9_WndProcHandler(hWnd, uMsg, wParam, lParam))
 		return true;
 
 	return CallWindowProc(Hooks::g_pOldWindowProc, hWnd, uMsg, wParam, lParam);

@@ -352,9 +352,9 @@ bool CAutowall::HandleBulletPenetration(CSWeaponInfo* weaponData, trace_t& enter
 	if (&currentDamage == nullptr)
 		throw std::invalid_argument("currentDamage is null!");
 
-	auto data = FireBulletData(csgo::LocalPlayer->GetEyePosition());
+	auto data = FireBulletData(g::LocalPlayer->GetEyePosition());
 	data.filter = CTraceFilter();
-	data.filter.pSkip1 = csgo::LocalPlayer;
+	data.filter.pSkip1 = g::LocalPlayer;
 	trace_t exitTrace;
 	CBaseEntity* pEnemy = (CBaseEntity*)enterTrace.m_pEnt;
 	surfacedata_t *enterSurfaceData = g_pPhysics->GetSurfaceData(enterTrace.surface.surfaceProps);
@@ -396,7 +396,7 @@ bool CAutowall::HandleBulletPenetration(CSWeaponInfo* weaponData, trace_t& enter
 			combinedPenetrationModifier = 1.f;
 			finalDamageModifier = 0.16f;
 		}
-		else if (enterMaterial == CHAR_TEX_FLESH && (csgo::LocalPlayer->GetTeamNum() == pEnemy->GetTeamNum() && ff_damage_reduction_bullets == 0.f)) //TODO: Team check config
+		else if (enterMaterial == CHAR_TEX_FLESH && (g::LocalPlayer->GetTeamNum() == pEnemy->GetTeamNum() && ff_damage_reduction_bullets == 0.f)) //TODO: Team check config
 		{
 			//Look's like you aren't shooting through your teammate today
 			if (ff_damage_bullet_penetration == 0.f)
@@ -483,13 +483,13 @@ bool CAutowall::FireBullet(CBaseCombatWeapon* pWeapon, Vector& direction, float&
 	if (!pWeapon)
 		return false;
 
-	auto data = FireBulletData(csgo::LocalPlayer->GetEyePosition());
+	auto data = FireBulletData(g::LocalPlayer->GetEyePosition());
 	data.filter = CTraceFilter();
-	data.filter.pSkip1 = csgo::LocalPlayer;
+	data.filter.pSkip1 = g::LocalPlayer;
 	bool sv_penetration_type;
 	//	  Current bullet travel Power to penetrate Distance to penetrate Range               Player bullet reduction convars			  Amount to extend ray by
 	float currentDistance = 0.f, penetrationPower, penetrationDistance, maxRange, ff_damage_reduction_bullets, ff_damage_bullet_penetration, rayExtension = 40.f;
-	Vector eyePosition = csgo::LocalPlayer->GetEyePosition();
+	Vector eyePosition = g::LocalPlayer->GetEyePosition();
 
 	//For being superiour when the server owners think your autowall isn't well reversed. Imagine a meme HvH server with the old penetration system- pff
 	static ConVar* penetrationSystem = g_pCvar->FindVar(("sv_penetration_type"));
@@ -505,7 +505,7 @@ bool CAutowall::FireBullet(CBaseCombatWeapon* pWeapon, Vector& direction, float&
 
 	//We should be skipping localplayer when casting a ray to players.
 	CTraceFilter filter;
-	filter.pSkip1 = csgo::LocalPlayer;
+	filter.pSkip1 = g::LocalPlayer;
 
 	if (!weaponData)
 		return false;
@@ -535,7 +535,7 @@ bool CAutowall::FireBullet(CBaseCombatWeapon* pWeapon, Vector& direction, float&
 		//Create endpoint of bullet
 		Vector end = eyePosition + direction * maxRange;
 
-		TraceLine(eyePosition, end, MASK_SHOT_HULL | CONTENTS_HITBOX, csgo::LocalPlayer, &enterTrace);
+		TraceLine(eyePosition, end, MASK_SHOT_HULL | CONTENTS_HITBOX, g::LocalPlayer, &enterTrace);
 		ClipTraceToPlayers(eyePosition, end + direction * rayExtension, MASK_SHOT_HULL | CONTENTS_HITBOX, &filter, &enterTrace);
 
 		//We have to do this *after* tracing to the player.
@@ -560,7 +560,7 @@ bool CAutowall::FireBullet(CBaseCombatWeapon* pWeapon, Vector& direction, float&
 		//This looks gay as fuck if we put it into 1 long line of code.
 		bool canDoDamage = (enterTrace.hitgroup != HITGROUP_GEAR && enterTrace.hitgroup != HITGROUP_GENERIC);
 		//	bool isPlayer = enterTrace.m_pEnt->GetClientClass()->m_ClassID == CSClasses::CCSPlayer);
-		bool isEnemy = (((CBaseEntity*)csgo::LocalPlayer)->GetTeamNum() != ((CBaseEntity*)enterTrace.m_pEnt)->GetTeamNum());
+		bool isEnemy = (((CBaseEntity*)g::LocalPlayer)->GetTeamNum() != ((CBaseEntity*)enterTrace.m_pEnt)->GetTeamNum());
 		//	bool onTeam = (((CBaseEntity*)enterTrace.m_pEnt)->GetTeamNum() == (int32_t)TEAM_CT || ((CBaseEntity*)enterTrace.m_pEnt)->GetTeamNum() == (int32_t)TeamNumbers::TEAM_T);
 
 		//TODO: Team check config
@@ -580,18 +580,18 @@ bool CAutowall::FireBullet(CBaseCombatWeapon* pWeapon, Vector& direction, float&
 ////////////////////////////////////// Usage Calls //////////////////////////////////////
 float CAutowall::CanHit(Vector &point)
 {
-	auto data = FireBulletData(csgo::LocalPlayer->GetEyePosition());
+	auto data = FireBulletData(g::LocalPlayer->GetEyePosition());
 	data.filter = CTraceFilter();
-	data.filter.pSkip1 = csgo::LocalPlayer;
+	data.filter.pSkip1 = g::LocalPlayer;
 	Vector angles, direction;
-	Vector tmp = point - csgo::LocalPlayer->GetEyePosition();
+	Vector tmp = point - g::LocalPlayer->GetEyePosition();
 	float currentDamage = 0;
 
 	Math::VectorAngles(tmp, angles);
 	Math::AngleVectors(angles, &direction);
 	direction.NormalizeInPlace();
 
-	if (FireBullet(csgo::LocalPlayer->GetWeapon(), direction, currentDamage))
+	if (FireBullet(g::LocalPlayer->GetWeapon(), direction, currentDamage))
 		return currentDamage;
 	return -1; //That wall is just a bit too thick buddy
 }
@@ -625,11 +625,11 @@ bool CAutowall::PenetrateWall(CBaseEntity* pBaseEntity, Vector& vecPoint)
 
 bool CAutowall::CanWallbang(float &dmg)
 {
-	if (!csgo::LocalPlayer)
+	if (!g::LocalPlayer)
 		return false;
-	FireBulletData data = FireBulletData(csgo::LocalPlayer->GetEyePosition());
+	FireBulletData data = FireBulletData(g::LocalPlayer->GetEyePosition());
 	data.filter = CTraceFilter();
-	data.filter.pSkip1 = csgo::LocalPlayer;
+	data.filter.pSkip1 = g::LocalPlayer;
 
 	Vector EyeAng;
 	g_pEngine->GetViewAngles(EyeAng);
@@ -644,7 +644,7 @@ bool CAutowall::CanWallbang(float &dmg)
 	Math::AngleVectors(angles, &data.direction);
 	VectorNormalize(data.direction);
 
-	CBaseCombatWeapon* weapon = csgo::MainWeapon;
+	CBaseCombatWeapon* weapon = g::MainWeapon;
 
 	if (!weapon)
 		return false;
@@ -663,7 +663,7 @@ bool CAutowall::CanWallbang(float &dmg)
 
 	Vector end = data.src + data.direction * data.trace_length_remaining;
 
-	TraceLine(data.src, end, MASK_SHOT | CONTENTS_GRATE, csgo::LocalPlayer, &data.enter_trace);
+	TraceLine(data.src, end, MASK_SHOT | CONTENTS_GRATE, g::LocalPlayer, &data.enter_trace);
 
 	static ConVar* penetrationSystem = g_pCvar->FindVar(("sv_penetration_type"));
 	static ConVar* damageReductionBullets = g_pCvar->FindVar(("ff_damage_reduction_bullets"));
@@ -676,7 +676,7 @@ bool CAutowall::CanWallbang(float &dmg)
 	if (data.enter_trace.fraction == 1.0f)
 		return false;
 
-	if (HandleBulletPenetration(weaponData, data.enter_trace, csgo::LocalPlayer->GetEyePosition(), data.direction, data.penetrate_count, data.current_damage, weaponData->penetration, sv_penetration_type, ff_damage_reduction_bullets, ff_damage_bullet_penetration))
+	if (HandleBulletPenetration(weaponData, data.enter_trace, g::LocalPlayer->GetEyePosition(), data.direction, data.penetrate_count, data.current_damage, weaponData->penetration, sv_penetration_type, ff_damage_reduction_bullets, ff_damage_bullet_penetration))
 	{
 		dmg = data.current_damage;
 		return true;

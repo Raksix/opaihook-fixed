@@ -22,14 +22,14 @@ void CMisc::RankReveal()
 
 	int iBuffer[1];
 
-	if (csgo::UserCmd->buttons & IN_SCORE)
+	if (g::UserCmd->buttons & IN_SCORE)
 		fnReveal(iBuffer[1]);
 }
 
 void CMisc::Bunnyhop()
 {
-	if ((*csgo::LocalPlayer->GetFlags() & FL_ONGROUND) && csgo::walkbotenabled)
-		csgo::UserCmd->buttons = IN_JUMP;
+	if ((*g::LocalPlayer->GetFlags() & FL_ONGROUND) && g::walkbotenabled)
+		g::UserCmd->buttons = IN_JUMP;
 
 	if (Menu.Misc.AutoJump/* && Cvar->FindVar("sv_enablebunnyhopping")->GetValue() != 1*/)
 	{
@@ -38,18 +38,18 @@ void CMisc::Bunnyhop()
 		if (!bJumped && bFake)
 		{
 			bFake = false;
-			csgo::UserCmd->buttons |= IN_JUMP;
+			g::UserCmd->buttons |= IN_JUMP;
 		}
-		else if (csgo::UserCmd->buttons & IN_JUMP)
+		else if (g::UserCmd->buttons & IN_JUMP)
 		{
-			if (*csgo::LocalPlayer->GetFlags() & FL_ONGROUND)
+			if (*g::LocalPlayer->GetFlags() & FL_ONGROUND)
 			{
 				bJumped = true;
 				bFake = true;
 			}
 			else
 			{
-				csgo::UserCmd->buttons &= ~IN_JUMP;
+				g::UserCmd->buttons &= ~IN_JUMP;
 				bJumped = false;
 			}
 		}
@@ -77,71 +77,71 @@ void CMisc::WalkBotCM(Vector& oldang)
 	if (GetAsyncKeyState(Menu.Misc.WalkbotStart) & 0x1)
 		active = !active;
 
-	Vector localpos = csgo::LocalPlayer->GetAbsOrigin();
+	Vector localpos = g::LocalPlayer->GetAbsOrigin();
 
 	if (GetAsyncKeyState(Menu.Misc.WalkbotSet) & 0x1)
 	{
-		csgo::walkpoints.push_back(localpos);
-		csgo::wbpoints++;
+		g::walkpoints.push_back(localpos);
+		g::wbpoints++;
 	}
 	else if (GetAsyncKeyState(Menu.Misc.WalkbotDelete) & 0x1)
 	{
-		if (csgo::walkpoints.size() > 0)
-			csgo::walkpoints.pop_back();
+		if (g::walkpoints.size() > 0)
+			g::walkpoints.pop_back();
 
-		if (csgo::wbpoints > -1)
-			csgo::wbpoints--;
+		if (g::wbpoints > -1)
+			g::wbpoints--;
 	}
 
-	if (csgo::NewRound)
+	if (g::NewRound)
 		firstrun = true;
 
 	if (!active)
 	{
-		csgo::wbcurpoint = 0;
+		g::wbcurpoint = 0;
 		firstrun = true;
-		csgo::walkbotenabled = false;
+		g::walkbotenabled = false;
 		return;
 	}
 
-	csgo::walkbotenabled = true;
+	g::walkbotenabled = true;
 	walkbotting = true;
 
-	if (csgo::wbcurpoint > csgo::wbpoints)
-		csgo::wbcurpoint = 0;
+	if (g::wbcurpoint > g::wbpoints)
+		g::wbcurpoint = 0;
 
-	if (csgo::wbpoints == -1)
+	if (g::wbpoints == -1)
 		return;
 
-	Vector point = csgo::walkpoints[csgo::wbcurpoint];
+	Vector point = g::walkpoints[g::wbcurpoint];
 	wbdistance = fabs(Vector(localpos - point).Length2D());
 
 	if (wbdistance < 25.f)
-		csgo::wbcurpoint++;
+		g::wbcurpoint++;
 
-	if (csgo::wbcurpoint > csgo::wbpoints)
-		csgo::wbcurpoint = 0;
+	if (g::wbcurpoint > g::wbpoints)
+		g::wbcurpoint = 0;
 
-	if (csgo::wbpoints == -1)
+	if (g::wbpoints == -1)
 		return;
 
-	point = csgo::walkpoints[csgo::wbcurpoint];
+	point = g::walkpoints[g::wbcurpoint];
 	wbdistance = fabs(Vector(localpos - point).Length2D());
 
-	if (csgo::wbcurpoint == 0 && firstrun == true)
+	if (g::wbcurpoint == 0 && firstrun == true)
 	{
 		float lowdist = wbdistance;
 
-		for (int i = 0; i < csgo::wbpoints; i++)
+		for (int i = 0; i < g::wbpoints; i++)
 		{
-			Vector pt = csgo::walkpoints[i];
+			Vector pt = g::walkpoints[i];
 			float dist = fabs(Vector(localpos - pt).Length2D());
 
 			if (dist < lowdist)
 			{
 				lowdist = dist;
-				csgo::wbcurpoint = i;
-				point = csgo::walkpoints[csgo::wbcurpoint];
+				g::wbcurpoint = i;
+				point = g::walkpoints[g::wbcurpoint];
 				wbdistance = dist;
 			}
 		}
@@ -151,14 +151,14 @@ void CMisc::WalkBotCM(Vector& oldang)
 
 	static Vector lastang;
 
-	Vector curang = GameUtils::CalculateAngle(csgo::LocalPlayer->GetEyePosition(), point);
+	Vector curang = GameUtils::CalculateAngle(g::LocalPlayer->GetEyePosition(), point);
 	curang.x = 0.f;
 
 	Math::NormalizeVector(curang);
 	Math::ClampAngles(curang);
 	lastang = curang;
 
-	csgo::StrafeAngle = curang;
+	g::StrafeAngle = curang;
 }
 
 template<class T, class U>
@@ -180,12 +180,12 @@ void CMisc::AutoStrafe()
 	bool bKeysPressed = true;
 	if (GetAsyncKeyState(0x41) || GetAsyncKeyState(0x57) || GetAsyncKeyState(0x53) || GetAsyncKeyState(0x44)) bKeysPressed = false;
 
-	if ((GetAsyncKeyState(VK_SPACE) && !(*csgo::LocalPlayer->GetFlags() & FL_ONGROUND)) && bKeysPressed)
+	if ((GetAsyncKeyState(VK_SPACE) && !(*g::LocalPlayer->GetFlags() & FL_ONGROUND)) && bKeysPressed)
 	{
-		csgo::UserCmd->forwardmove = (1550.f * 5) / csgo::LocalPlayer->GetVelocity().Length2D();
-		csgo::UserCmd->sidemove = (csgo::UserCmd->command_number % 2) == 0 ? -450.f : 450.f;
-		if (csgo::UserCmd->forwardmove > 450.f)
-			csgo::UserCmd->forwardmove = 450.f;
+		g::UserCmd->forwardmove = (1550.f * 5) / g::LocalPlayer->GetVelocity().Length2D();
+		g::UserCmd->sidemove = (g::UserCmd->command_number % 2) == 0 ? -450.f : 450.f;
+		if (g::UserCmd->forwardmove > 450.f)
+			g::UserCmd->forwardmove = 450.f;
 	}
 }
 
@@ -206,31 +206,34 @@ void CMisc::HandleClantag()
 	
 }
 
+void CMisc::RunMiscFuncs() {
+	HandleClantag();
+	Bunnyhop();
+	AutoStrafe();
+	DoCircle();
+}
 
 void CMisc::FixCmd()
 {
 	if (Menu.Misc.AntiUT)
 	{
-		csgo::UserCmd->viewangles.y = Math::NormalizeYaw(csgo::UserCmd->viewangles.y);
-		Math::ClampAngles(csgo::UserCmd->viewangles);
+		g::UserCmd->viewangles = Math::NormalizeAngle2(g::UserCmd->viewangles);
 
-		if (csgo::UserCmd->forwardmove > 450)
-			csgo::UserCmd->forwardmove = 450;
-		if (csgo::UserCmd->forwardmove < -450)
-			csgo::UserCmd->forwardmove = -450;
+		if (g::UserCmd->forwardmove > 450)
+			g::UserCmd->forwardmove = 450;
+		if (g::UserCmd->forwardmove < -450)
+			g::UserCmd->forwardmove = -450;
 
-		if (csgo::UserCmd->sidemove > 450)
-			csgo::UserCmd->sidemove = 450;
-		if (csgo::UserCmd->sidemove < -450)
-			csgo::UserCmd->sidemove = -450;
+		if (g::UserCmd->sidemove > 450)
+			g::UserCmd->sidemove = 450;
+		if (g::UserCmd->sidemove < -450)
+			g::UserCmd->sidemove = -450;
 	}
 }
 
-
-
 int LagCompBreak() {
 	
-	Vector velocity = csgo::LocalPlayer->GetVelocity();
+	Vector velocity = g::LocalPlayer->GetVelocity();
 	velocity.z = 0;
 	float speed = velocity.Length();
 	if (speed > 0.f) {
@@ -251,56 +254,45 @@ bool CMisc::FakeLag()
 	const int min_choke = 1;
 	static int tick_choke = 1;
 	bool m = true;
-	if (*csgo::LocalPlayer->GetFlags() & FL_ONGROUND)
+	if (*g::LocalPlayer->GetFlags() & FL_ONGROUND)
 	{
 		if (!Menu.Misc.FakelagOnground)
 		{
-			csgo::chokedticks = 1;
+			g::chokedticks = 1;
 			return false;
 		}
 
-		if (csgo::LocalPlayer->GetVelocity().Length() < 0.1f)
+		if (g::LocalPlayer->GetVelocity().Length() < 0.1f)
 		{
-			csgo::chokedticks = 1;
+			g::chokedticks = 1;
 			return false;
 		}
 	}
 
-	if (csgo::UserCmd->buttons & IN_ATTACK)
+	if (g::UserCmd->buttons & IN_ATTACK)
 	{
-		csgo::chokedticks = 1;
+		g::chokedticks = 1;
 		return false;
 	}
 
 	switch (Menu.Misc.FakelagMode)
 	{
 	case 0:
-		csgo::chokedticks = Menu.Misc.FakelagAmount;
+		g::chokedticks = Menu.Misc.FakelagAmount;
 		break;
 
 	case 1:
-		csgo::chokedticks = std::min<int>(static_cast<int>(std::ceilf(64 / (csgo::LocalPlayer->GetVelocity().Length() * g_pGlobals->interval_per_tick))), Menu.Misc.FakelagAmount);
+		g::chokedticks = std::min<int>(static_cast<int>(std::ceilf(64 / (g::LocalPlayer->GetVelocity().Length() * g_pGlobals->interval_per_tick))), Menu.Misc.FakelagAmount);
 		break;
 
 	case 2:
-		csgo::chokedticks = LagCompBreak();
+		g::chokedticks = LagCompBreak();
 		break;
 	}
-	if (g_pEngine->GetNetChannel()->m_nChokedPackets < csgo::chokedticks)
-		csgo::SendPacket = false;
+	if (g_pEngine->GetNetChannel()->m_nChokedPackets < g::chokedticks)
+		g::SendPacket = false;
 	else
-		csgo::SendPacket = true;
-
-	//if (ticks >= csgo::chokedticks)
-	//{
-	//	ticks = 0;
-	//	csgo::SendPacket = true;
-	//}
-	//else
-	//{
-	//	csgo::SendPacket = false;
-	//	ticks++;
-	//}
+		g::SendPacket = true;
 }
 
 float VerifyRotation(float ideal_rotation)
@@ -309,7 +301,7 @@ float VerifyRotation(float ideal_rotation)
 	static constexpr float minimum_distance = 50.f;
 	static constexpr float rotation_step = 5.f;
 
-	auto local_player = csgo::LocalPlayer;
+	auto local_player = g::LocalPlayer;
 	if (!local_player)
 		return ideal_rotation;
 
@@ -419,20 +411,19 @@ void RotateMovement (float yaw)
 	float cos_rot = cos(rotation);
 	float sin_rot = sin(rotation);
 
-	float new_forwardmove = (cos_rot * csgo::UserCmd->forwardmove) - (sin_rot * csgo::UserCmd->sidemove);
-	float new_sidemove = (sin_rot * csgo::UserCmd->forwardmove) + (cos_rot * csgo::UserCmd->sidemove);
+	float new_forwardmove = (cos_rot * g::UserCmd->forwardmove) - (sin_rot * g::UserCmd->sidemove);
+	float new_sidemove = (sin_rot * g::UserCmd->forwardmove) + (cos_rot * g::UserCmd->sidemove);
 
-	csgo::UserCmd->forwardmove = new_forwardmove;
-	csgo::UserCmd->sidemove = new_sidemove;
+	g::UserCmd->forwardmove = new_forwardmove;
+	g::UserCmd->sidemove = new_sidemove;
 }
-
 
 void CMisc::DoCircle()
 {
 	if (!GetAsyncKeyState(Menu.Misc.circlestrafekey))
 		return;
 
-	auto local_player = csgo::LocalPlayer;
+	auto local_player = g::LocalPlayer;
 	if (!local_player || local_player->GetHealth() <= 0 || *local_player->GetFlags() & FL_ONGROUND)
 		return;
 
@@ -443,15 +434,14 @@ void CMisc::DoCircle()
 
 	float rotation_amount = VerifyRotation(ideal_rotation_amount);
 
-	csgo::UserCmd->forwardmove = 0.f;
-	csgo::UserCmd->sidemove = (rotation_amount > 0) ? -450.f : 450.f;
+	g::UserCmd->forwardmove = 0.f;
+	g::UserCmd->sidemove = (rotation_amount > 0) ? -450.f : 450.f;
 	RotateMovement(velocity_yaw + rotation_amount);
 }
 
-
 void CMisc::FixMovement()
 {
-	auto cmd = csgo::UserCmd;
+	auto cmd = g::UserCmd;
 	Vector real_viewangles;
 	g_pEngine->GetViewAngles(real_viewangles);
 
@@ -465,116 +455,4 @@ void CMisc::FixMovement()
 
 	cmd->forwardmove = cos(yaw) * speed;
 	cmd->sidemove = sin(yaw) * speed;
-
-	//cmd->buttons &= ~IN_RIGHT;
-	//cmd->buttons &= ~IN_MOVERIGHT;
-	//cmd->buttons &= ~IN_LEFT;
-	//cmd->buttons &= ~IN_MOVELEFT;
-	//cmd->buttons &= ~IN_FORWARD;
-	//cmd->buttons &= ~IN_BACK;
-
-	//if (cmd->forwardmove > 0.f)
-	//	cmd->buttons |= IN_FORWARD;
-	//else if (cmd->forwardmove < 0.f)
-	//	cmd->buttons |= IN_BACK;
-
-	//if (cmd->sidemove > 0.f)
-	//{
-	//	cmd->buttons |= IN_RIGHT;
-	//	cmd->buttons |= IN_MOVERIGHT;
-	//}
-	//else if (cmd->sidemove < 0.f)
-	//{
-	//	cmd->buttons |= IN_LEFT;
-	//	cmd->buttons |= IN_MOVELEFT;
-	//}
-}
-
-
-void LoadPathing()
-{
-
-	char path[MAX_PATH];
-	GetModuleFileNameA(GetModuleHandle(NULL), path, 255);
-	for (int i = strlen(path); i > 0; i--)
-	{
-		if (path[i] == '\\')
-		{
-			path[i + 1] = 0;
-			break;
-		}
-	}
-
-	char size[8];
-	char vecstr[64];
-	char itostr[8];
-	CBaseEntity *pLocal = csgo::LocalPlayer;
-	if (!pLocal)
-		return;
-	if (g_Misc->path.size() > 1)
-	{
-
-		g_Misc->path.erase(g_Misc->path.begin(), g_Misc->path.end());
-		sprintf_s(path, "\\%s_%s_%d.cfg", "pathes", "test"/*g_pEngine->GetLevelName()*/, pLocal->GetTeamNum());
-		GetPrivateProfileStringA("Points", "Size", "0", size, 8, path);
-		int numPoints = atoi(size);
-		for (int i = 0; i < numPoints - 1; i++)
-		{
-			char vecstr[64];
-			char itostr[8];
-			sprintf_s(itostr, "%d", i);
-			GetPrivateProfileStringA("Pathing", itostr, "0.0 0.0 0.0", vecstr, 64, path);
-			std::string PosStr = vecstr;
-			string buffer;
-			stringstream ss(PosStr);
-			vector<string> floats;
-			while (ss >> buffer)
-				floats.push_back(buffer);
-
-			g_Misc->path.push_back(Vector(stof(floats[0]), stof(floats[1]), stof(floats[2])));
-		}
-	}
-}
-
-void SavePathing()
-{
-
-	char path[MAX_PATH];
-	GetModuleFileNameA(GetModuleHandle(NULL), path, 255);
-	for (int i = strlen(path); i > 0; i--)
-	{
-		if (path[i] == '\\')
-		{
-			path[i + 1] = 0;
-			break;
-		}
-	}
-	char size[8];
-	char vecstr[64];
-	char itostr[8];
-
-	if (g_Misc->path.size() > 1)
-	{
-		sprintf_s(path, "\\%s_%s_%d.cfg", "pathes", "test"/*g_pEngine->GetLevelName()*/, csgo::LocalPlayer->GetTeamNum());
-		printf("Path %s\n", path);
-		sprintf_s(size, "%d", g_Misc->path.size() + 1);
-		WritePrivateProfileStringA("Points", "Size", size, path);
-		for (int i = 0; i < g_Misc->path.size(); i++)
-		{
-			sprintf_s(itostr, "%d", i);
-			sprintf_s(vecstr, "%f %f %f", g_Misc->path.at(i).x, g_Misc->path.at(i).y, g_Misc->path.at(i).z);
-			WritePrivateProfileStringA("Pathing", itostr, vecstr, path);
-		}
-	}
-}
-bool MarksIsVisible(CBaseEntity* local, Vector& vTo) 
-{
-	Ray_t ray;
-	trace_t trace;
-	CTraceFilterNoPlayer filter;
-	filter.pSkip1 = local;
-
-	ray.Init(local->GetEyePosition(), vTo);
-	g_pEngineTrace->TraceRay(ray, 0x4600400B, &filter, &trace);
-	return (trace.fraction > 0.99f);
 }

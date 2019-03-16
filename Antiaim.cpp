@@ -5,32 +5,33 @@
 #include "Math.h"
 #include "Aimbot.h"
 #include <time.h>
+#include <thread>
 
 float get_curtime() {
-	if (!csgo::LocalPlayer)
+	if (!g::LocalPlayer)
 		return 0;
 	int g_tick = 0;
 	CUserCmd* g_pLastCmd = nullptr;
 	if (!g_pLastCmd || g_pLastCmd->hasbeenpredicted) {
-		g_tick = csgo::LocalPlayer->GetTickBase();
+		g_tick = g::LocalPlayer->GetTickBase();
 	}
 	else {
 		++g_tick;
 	}
-	g_pLastCmd = csgo::UserCmd;
+	g_pLastCmd = g::UserCmd;
 	float curtime = g_tick * g_pGlobals->interval_per_tick;
 	return curtime;
 }
 
 bool next_lby_update() 
 {
-	if (csgo::LocalPlayer) 
+	if (g::LocalPlayer) 
 	{
 		auto net_channel = g_pEngine->GetNetChannel();
 		static float next_lby_update_time = 0;
 		const float current_time = get_curtime();
 
-		if (csgo::LocalPlayer->GetVelocity().Length2D() > 0.1) {
+		if (g::LocalPlayer->GetVelocity().Length2D() > 0.1) {
 			next_lby_update_time = current_time + 0.22f;
 		}
 		else {
@@ -68,9 +69,9 @@ namespace binds
 		}
 
 		if (left)
-			csgo::UserCmd->viewangles.y -= 90;
+			g::UserCmd->viewangles.y -= 90;
 		else if (right)
-			csgo::UserCmd->viewangles.y += 90;
+			g::UserCmd->viewangles.y += 90;
 		else if (back)
 		{
 
@@ -159,7 +160,7 @@ namespace freestanding
 		int index = -1;
 		float lowest_fov = INT_MAX;
 
-		CBaseEntity* local_player = csgo::LocalPlayer;
+		CBaseEntity* local_player = g::LocalPlayer;
 
 		if (!local_player)
 			return -1;
@@ -195,9 +196,9 @@ namespace freestanding
 		float highestthickness = 0.f;
 		Vector besthead;
 
-		auto leyepos = csgo::LocalPlayer->GetOrigin() + csgo::LocalPlayer->GetViewOffset();
-		auto headpos = get_hitbox_pos(csgo::LocalPlayer, 0);
-		auto origin = csgo::LocalPlayer->GetAbsOrigin();
+		auto leyepos = g::LocalPlayer->GetOrigin() + g::LocalPlayer->GetViewOffset();
+		auto headpos = get_hitbox_pos(g::LocalPlayer, 0);
+		auto origin = g::LocalPlayer->GetAbsOrigin();
 
 		auto checkWallThickness = [&](CBaseEntity* pPlayer, Vector newhead) -> float
 		{
@@ -207,7 +208,7 @@ namespace freestanding
 			Ray_t ray;
 			ray.Init(newhead, eyepos);
 
-			CTraceFilterSkipTwoEntities filter(pPlayer, csgo::LocalPlayer);
+			CTraceFilterSkipTwoEntities filter(pPlayer, g::LocalPlayer);
 
 			trace_t trace1, trace2;
 			g_pEngineTrace->TraceRay_NEW(ray, MASK_SHOT_BRUSHONLY, &filter, &trace1);
@@ -264,7 +265,7 @@ namespace freestanding
 		}
 
 		if (!no_active)
-			csgo::UserCmd->viewangles.y = RAD2DEG(bestrotation) - 180;
+			g::UserCmd->viewangles.y = RAD2DEG(bestrotation) - 180;
 
 	}
 }
@@ -278,22 +279,22 @@ void CAntiaim::DoAntiAims()
 		switch (choose)
 		{
 		case 1:
-			csgo::UserCmd->viewangles.x = 89;
+			g::UserCmd->viewangles.x = 89;
 			break;
 		case 2:
-			csgo::UserCmd->viewangles.x = -180;
+			g::UserCmd->viewangles.x = -180;
 			break;
 		case 3:
-			csgo::UserCmd->viewangles.x = -991;
+			g::UserCmd->viewangles.x = -991;
 			break;
 		case 4:
-			csgo::UserCmd->viewangles.x = 991;
+			g::UserCmd->viewangles.x = 991;
 			break;
 		case 5:
-			csgo::UserCmd->viewangles.x = 0;
+			g::UserCmd->viewangles.x = 0;
 			break;
 		case 6:
-			csgo::UserCmd->viewangles.x = 1080;
+			g::UserCmd->viewangles.x = 1080;
 			break;
 		}
 	};
@@ -303,10 +304,10 @@ void CAntiaim::DoAntiAims()
 		switch (select)
 		{
 		case 1:
-			csgo::UserCmd->viewangles.y += 180;
+			g::UserCmd->viewangles.y += 180;
 			break;
 		case 2:
-			csgo::UserCmd->viewangles.y += 180 + Math::RandomFloat(-Menu.Antiaim.JitterRange, Menu.Antiaim.JitterRange);
+			g::UserCmd->viewangles.y += 180 + Math::RandomFloat(-Menu.Antiaim.JitterRange, Menu.Antiaim.JitterRange);
 			break;
 		case 3:
 		{
@@ -314,7 +315,7 @@ void CAntiaim::DoAntiAims()
 			t += 5;
 			if (t > 240)
 				t = 120;
-			csgo::UserCmd->viewangles.y += t;
+			g::UserCmd->viewangles.y += t;
 		}
 		break;
 		case 4:
@@ -327,11 +328,11 @@ void CAntiaim::DoAntiAims()
 			if (y2 >= 179)
 				y2 = -179;
 
-			csgo::UserCmd->viewangles.y = y2;
+			g::UserCmd->viewangles.y = y2;
 		}
 		break;
 		case 5:
-			csgo::UserCmd->viewangles.y += Math::RandomFloat(-180, 180);
+			g::UserCmd->viewangles.y += Math::RandomFloat(-180, 180);
 			break;
 		}
 	};
@@ -346,24 +347,18 @@ void CAntiaim::DoAntiAims()
 		freestanding::Do();
 		break;
 	}
-	if (next_lby_update())
-		csgo::UserCmd->viewangles.y -= 119;
+	if (next_lby_update()) // lol
+		g::UserCmd->viewangles.y -= 119;
 
-	static bool flip;
-	static float angle = flip ? 0 : 170;
-	if (csgo::SendPacket)
-		csgo::UserCmd->viewangles.y += angle;
-	flip = !flip;
-
-	if (*csgo::LocalPlayer->GetFlags() & FL_ONGROUND)
+	if (*g::LocalPlayer->GetFlags() & FL_ONGROUND)
 	{
-		if (csgo::LocalPlayer->GetVelocity().Length2D() < 32)
+		if (g::LocalPlayer->GetVelocity().Length2D() < 32)
 		{
 			Pitch(Menu.Antiaim.Stand.pitch);
 			Yaw(Menu.Antiaim.Stand.yaw);
 
 		}
-		else if (csgo::LocalPlayer->GetVelocity().Length2D() > 32)
+		else if (g::LocalPlayer->GetVelocity().Length2D() > 32)
 		{
 			Pitch(Menu.Antiaim.Move.pitch);
 			Yaw(Menu.Antiaim.Move.yaw);
@@ -380,33 +375,32 @@ void CAntiaim::Run(QAngle org_view)
 {
 	if (Menu.Antiaim.AntiaimEnable)
 	{
-		CGrenade* pCSGrenade = (CGrenade*)csgo::LocalPlayer->GetWeapon();
-		if (csgo::UserCmd->buttons & IN_ATTACK
-			|| csgo::UserCmd->buttons & IN_USE
-			|| csgo::LocalPlayer->GetMoveType() == MOVETYPE_LADDER && csgo::LocalPlayer->GetVelocity().Length() > 0
-			|| csgo::LocalPlayer->GetMoveType() == MOVETYPE_NOCLIP
-			|| *csgo::LocalPlayer->GetFlags() & FL_FROZEN
+		CGrenade* pCSGrenade = (CGrenade*)g::LocalPlayer->GetWeapon();
+		if (g::UserCmd->buttons & IN_ATTACK
+			|| g::UserCmd->buttons & IN_USE
+			|| g::LocalPlayer->GetMoveType() == MOVETYPE_LADDER && g::LocalPlayer->GetVelocity().Length() > 0
+			|| g::LocalPlayer->GetMoveType() == MOVETYPE_NOCLIP
+			|| *g::LocalPlayer->GetFlags() & FL_FROZEN
 			|| pCSGrenade && pCSGrenade->GetThrowTime() > 0.f)
 			return;
 
+		if (!Menu.Misc.FakelagEnable || (*g::LocalPlayer->GetFlags() & FL_ONGROUND && !Menu.Misc.FakelagOnground || *g::LocalPlayer->GetFlags() & FL_ONGROUND && g::LocalPlayer->GetVelocity().Length() < 3))
+			g::SendPacket = choke;
+
 		choke = !choke;
-
-		if (!Menu.Misc.FakelagEnable || (*csgo::LocalPlayer->GetFlags() & FL_ONGROUND && !Menu.Misc.FakelagOnground || *csgo::LocalPlayer->GetFlags() & FL_ONGROUND && csgo::LocalPlayer->GetVelocity().Length() < 3))
-			csgo::SendPacket = choke;
-
-		//csgo::UserCmd->viewangles = org_view;
+		//g::UserCmd->viewangles = org_view;
 
 		DoAntiAims();
 
 
-		csgo::UserCmd->buttons |= IN_BULLRUSH;
+		g::UserCmd->buttons |= IN_BULLRUSH;
 
 		//static bool counter = false;
 		if (GetAsyncKeyState('Z'))
 		{
 			static bool counter = false;
 			static int counters = 0;
-			if (counters == 13)
+			if (counters == 20)
 			{
 				counters = 0;
 				counter = !counter;
@@ -414,24 +408,24 @@ void CAntiaim::Run(QAngle org_view)
 			counters++;
 			if (counter)
 			{
-				csgo::UserCmd->buttons |= IN_DUCK;
-				csgo::SendPacket = true;
+				g::UserCmd->buttons |= IN_DUCK;
+				g::SendPacket = true;
 			}
 			else {
-				csgo::UserCmd->buttons &= ~IN_DUCK;
-				csgo::SendPacket = false;
+				g::UserCmd->buttons &= ~IN_DUCK;
+				g::SendPacket = false;
 			}
 		}
 	
 
-		//Fakewalk(csgo::UserCmd);
+		//Fakewalk(g::UserCmd);
 
-		/*if (csgo::bShouldChoke)
-			csgo::SendPacket = csgo::bShouldChoke = false;
+		/*if (g::bShouldChoke)
+			g::SendPacket = g::bShouldChoke = false;
 
-		if (!csgo::SendPacket)
-			csgo::nChokedTicks++;
+		if (!g::SendPacket)
+			g::nChokedTicks++;
 		else
-			csgo::nChokedTicks = 0;*/
+			g::nChokedTicks = 0;*/
 	}
 }

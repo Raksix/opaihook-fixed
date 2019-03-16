@@ -29,16 +29,16 @@ bool GameUtils::WorldToScreen( const Vector& in, Vector& position )
 		Sleep(100);
 	}
 
-	float w = csgo::viewMatrix[3][0] * in.x + csgo::viewMatrix[3][1] * in.y + csgo::viewMatrix[3][2] * in.z + csgo::viewMatrix[3][3];
+	float w = g::viewMatrix[3][0] * in.x + g::viewMatrix[3][1] * in.y + g::viewMatrix[3][2] * in.z + g::viewMatrix[3][3];
 
-	float ScreenWidth = (float)csgo::Screen.width;
-	float ScreenHeight = (float)csgo::Screen.height;
+	float ScreenWidth = (float)g::Screen.width;
+	float ScreenHeight = (float)g::Screen.height;
 
 	if (w > 0.01)
 	{
 		float inverseWidth = 1 / w;
-		position.x = (float)((ScreenWidth / 2) + (0.5 * ((csgo::viewMatrix[0][0] * in.x + csgo::viewMatrix[0][1] * in.y + csgo::viewMatrix[0][2] * in.z + csgo::viewMatrix[0][3]) * inverseWidth) * ScreenWidth + 0.5));
-		position.y = (float)((ScreenHeight / 2) - (0.5 * ((csgo::viewMatrix[1][0] * in.x + csgo::viewMatrix[1][1] * in.y + csgo::viewMatrix[1][2] * in.z + csgo::viewMatrix[1][3]) * inverseWidth) * ScreenHeight + 0.5));
+		position.x = (float)((ScreenWidth / 2) + (0.5 * ((g::viewMatrix[0][0] * in.x + g::viewMatrix[0][1] * in.y + g::viewMatrix[0][2] * in.z + g::viewMatrix[0][3]) * inverseWidth) * ScreenWidth + 0.5));
+		position.y = (float)((ScreenHeight / 2) - (0.5 * ((g::viewMatrix[1][0] * in.x + g::viewMatrix[1][1] * in.y + g::viewMatrix[1][2] * in.z + g::viewMatrix[1][3]) * inverseWidth) * ScreenHeight + 0.5));
 		return true;
 	}
 
@@ -52,7 +52,7 @@ bool IsVisible(const Vector & start, const Vector & end, CBaseEntity * pPlayer)
 	ray.Init(start, end);
 
 	CTraceFilter filter;
-	filter.pSkip1 = csgo::LocalPlayer;
+	filter.pSkip1 = g::LocalPlayer;
 
 	g_pEngineTrace->TraceRay(ray, MASK_SHOT, &filter, &tr);
 
@@ -93,7 +93,7 @@ std::vector<Vector> GameUtils::GetMultiplePointsForHitbox(CBaseEntity* pBaseEnti
 
 	auto center = (min + max) * 0.5f;
 
-	QAngle CurrentAngles = GameUtils::CalculateAngle(center, csgo::LocalPlayer->GetEyePosition());
+	QAngle CurrentAngles = GameUtils::CalculateAngle(center, g::LocalPlayer->GetEyePosition());
 
 	Vector Forward;
 	Math::AngleVectors(CurrentAngles, &Forward);
@@ -217,10 +217,10 @@ static bool GameUtils::isVisible(CBaseEntity* lul, int bone)
 	Ray_t ray;
 	trace_t tr;
 
-	ray.Init(csgo::LocalPlayer->GetEyePosition(), lul->GetBonePos(bone));
+	ray.Init(g::LocalPlayer->GetEyePosition(), lul->GetBonePos(bone));
 
 	CTraceFilter filter;
-	filter.pSkip1 = csgo::LocalPlayer;
+	filter.pSkip1 = g::LocalPlayer;
 
 	g_pEngineTrace->TraceRay(ray, (0x1 | 0x4000 | 0x2000000 | 0x2 | 0x4000000 | 0x40000000), &filter, &tr);
 
@@ -309,11 +309,11 @@ bool GameUtils::IsAbleToShoot()
     if( !g_pGlobals )
         return false;
 
-    if( !csgo::LocalPlayer || !csgo::MainWeapon )
+    if( !g::LocalPlayer || !g::MainWeapon )
         return false;
 
-    auto flServerTime = (float)csgo::LocalPlayer->GetTickBase() * g_pGlobals->interval_per_tick;
-    auto flNextPrimaryAttack = csgo::MainWeapon->NextPrimaryAttack();
+    auto flServerTime = (float)g::LocalPlayer->GetTickBase() * g_pGlobals->interval_per_tick;
+    auto flNextPrimaryAttack = g::MainWeapon->NextPrimaryAttack();
 
     return( !( flNextPrimaryAttack > flServerTime ) );
 }

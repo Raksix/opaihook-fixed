@@ -7,13 +7,13 @@
 
 bool CLegitBot::SettingProxy()
 {
-	if (!csgo::MainWeapon)
+	if (!g::MainWeapon)
 		return false;
-	if (csgo::MainWeapon->IsMiscWeapon())
+	if (g::MainWeapon->IsMiscWeapon())
 		return false;
-	if (csgo::MainWeapon->GetWeaponType() == WEPCLASS_KNIFE || csgo::MainWeapon->GetWeaponType() == WEPCLASS_INVALID)
+	if (g::MainWeapon->GetWeaponType() == WEPCLASS_KNIFE || g::MainWeapon->GetWeaponType() == WEPCLASS_INVALID)
 		return false;
-	int WeaponID = csgo::MainWeapon->GetWeaponNum();
+	int WeaponID = g::MainWeapon->GetWeaponNum();
 
 	if (WeaponID < 0)
 		return false;
@@ -42,9 +42,9 @@ QAngle CLegitBot::Smooth(QAngle delta)
 
 void CLegitBot::Run()
 {
-	if (!csgo::LocalPlayer)
+	if (!g::LocalPlayer)
 		return;
-	CBaseCombatWeapon* pWeapon = csgo::LocalPlayer->GetWeapon();
+	CBaseCombatWeapon* pWeapon = g::LocalPlayer->GetWeapon();
 	if (!pWeapon || pWeapon->IsMiscWeapon())
 		return;
 	float flNearestTick = FLT_MAX;
@@ -133,13 +133,13 @@ void CLegitBot::Run()
 		Target = NearestTick;
 	else if (Setting.iBackTrackType == 2 && ValidEnt)
 		Target = NearestEntity;
-	if (Aimbot() && CBackTrackManager::get().IsValidTick(Target) && CBackTrackManager::get().IsVisibleTick(Target, true, true) && csgo::UserCmd->buttons & IN_ATTACK && (ReTargetTime + Setting.flSwitchTargetDelay < g_pGlobals->curtime || Target.iIndex == LastTargetIndex))
+	if (Aimbot() && CBackTrackManager::get().IsValidTick(Target) && CBackTrackManager::get().IsVisibleTick(Target, true, true) && g::UserCmd->buttons & IN_ATTACK && (ReTargetTime + Setting.flSwitchTargetDelay < g_pGlobals->curtime || Target.iIndex == LastTargetIndex))
 	{
 		CreateAimPath(Target);
 	}
-	if (csgo::UserCmd->buttons & IN_ATTACK && ValidTick && Setting.iBackTrackType > 0)
+	if (g::UserCmd->buttons & IN_ATTACK && ValidTick && Setting.iBackTrackType > 0)
 	{
-		csgo::UserCmd->tick_count = TIME_TO_TICKS(NearestTick.flSimulationTime);
+		g::UserCmd->tick_count = TIME_TO_TICKS(NearestTick.flSimulationTime);
 	}
 	g_pEngine->GetViewAngles(UserMoveDetect);
 }
@@ -148,7 +148,7 @@ float CLegitBot::Get2DFov(Vector pos)
 {
 	Vector vecScreen;
 	int iWidth, iHeight;
-	QAngle punchAngle = csgo::LocalPlayer->GetPunchAngle() * 2;
+	QAngle punchAngle = g::LocalPlayer->GetPunchAngle() * 2;
 	g_pEngine->GetScreenSize(iWidth, iHeight);
 	int x = iWidth / 2;
 	int y = iHeight / 2;
@@ -163,17 +163,17 @@ float CLegitBot::Get2DFov(Vector pos)
 
 float CLegitBot::GetAngFov(Vector pos)
 {
-	QAngle angDelta = GameUtils::CalculateAngle(csgo::LocalPlayer->GetEyePosition(), pos) - UserMoveDetect /*- csgo::LocalPlayer->GetPunchAngle() * 2*/;
+	QAngle angDelta = GameUtils::CalculateAngle(g::LocalPlayer->GetEyePosition(), pos) - UserMoveDetect /*- g::LocalPlayer->GetPunchAngle() * 2*/;
 	return Vector(Math::NormalizeYaw(angDelta.x), Math::NormalizeYaw(angDelta.y), 0).Length2D();
 }
 
 float CLegitBot::Get3DFov(Vector pos) 
 {
-	float flDist = (csgo::LocalPlayer->GetEyePosition() - pos).Length();
+	float flDist = (g::LocalPlayer->GetEyePosition() - pos).Length();
 	Vector forward, endtrace;
 
-	Math::AngleVectors(csgo::LocalPlayer->GetEyeAngles(), &forward);
-	endtrace = csgo::LocalPlayer->GetEyePosition() + (forward * flDist);
+	Math::AngleVectors(g::LocalPlayer->GetEyeAngles(), &forward);
+	endtrace = g::LocalPlayer->GetEyePosition() + (forward * flDist);
 
 	return (pos - endtrace).Length();
 }
@@ -189,18 +189,18 @@ bool CLegitBot::Aimbot()
 		AimPath.clear();
 		return true;
 	}
-	if (AimPath[0].bNoShot/* && csgo::UserCmd->buttons & IN_ATTACK*/) //Perfect way for delay
-		csgo::UserCmd->buttons &= ~IN_ATTACK;
+	if (AimPath[0].bNoShot/* && g::UserCmd->buttons & IN_ATTACK*/) //Perfect way for delay
+		g::UserCmd->buttons &= ~IN_ATTACK;
 	if (AimPath[0].bSilentHit && !AimPath[0].bNoShot)
 	{
-		csgo::UserCmd->viewangles.y = AimPath[AimPath.size() - 1].angAimAngle.y - csgo::LocalPlayer->GetPunchAngle().y * 2;
-		csgo::SendPacket = false;
-		if (!csgo::UserCmd->buttons & IN_ATTACK)
-			csgo::UserCmd->buttons |= IN_ATTACK;
+		g::UserCmd->viewangles.y = AimPath[AimPath.size() - 1].angAimAngle.y - g::LocalPlayer->GetPunchAngle().y * 2;
+		g::SendPacket = false;
+		if (!g::UserCmd->buttons & IN_ATTACK)
+			g::UserCmd->buttons |= IN_ATTACK;
 	}
 	if (AimPath[0].bForceShot)
-		csgo::UserCmd->buttons |= IN_ATTACK;
-	g_pEngine->SetViewAngles(AimPath[0].angAimAngle - csgo::LocalPlayer->GetPunchAngle() * 2/* - Smooth(csgo::LocalPlayer->GetPunchAngle() * 2)*/);
+		g::UserCmd->buttons |= IN_ATTACK;
+	g_pEngine->SetViewAngles(AimPath[0].angAimAngle - g::LocalPlayer->GetPunchAngle() * 2/* - Smooth(g::LocalPlayer->GetPunchAngle() * 2)*/);
 	AimPath.erase(AimPath.begin());
 	if (AimPath.empty())
 		ReTargetTime = g_pGlobals->curtime;
@@ -257,10 +257,10 @@ void CLegitBot::CreateAimPath(RecordTick_t target)
 		return;
 	if (!Target.IsValid() || Target.IsZero())
 		return;
-	QAngle AimAngle = Math::NormalizeAngle2(GameUtils::CalculateAngle(csgo::LocalPlayer->GetEyePosition(), Target));
+	QAngle AimAngle = Math::NormalizeAngle2(GameUtils::CalculateAngle(g::LocalPlayer->GetEyePosition(), Target));
 	QAngle MyAngle;
 	g_pEngine->GetViewAngles(MyAngle);
-	MyAngle += csgo::LocalPlayer->GetPunchAngle() * 2;
+	MyAngle += g::LocalPlayer->GetPunchAngle() * 2;
 	if (Math::NormalizeAngle2(AimAngle - MyAngle).Length2D() < 0.7)
 		return;
 	int AimSteps = 1;
@@ -295,6 +295,6 @@ void CLegitBot::CreateAimPath(RecordTick_t target)
 		AimPath.push_back(Path);
 	}
 	LastTargetIndex = target.iIndex;
-	csgo::UserCmd->buttons &= ~IN_ATTACK;
+	g::UserCmd->buttons &= ~IN_ATTACK;
 }
 

@@ -170,7 +170,7 @@ LockCursor_t oLockCursor;
 
 void __stdcall Hooks::hk_lockcursor()
 {
-	if (csgo::ShowMenu)
+	if (g::ShowMenu)
 	{
 		g_pSurface->unlockcursor();
 		return;
@@ -416,13 +416,13 @@ void spread_crosshair(IDirect3DDevice9* pDevice)
 			g = Menu.Colors.SpreadCrosshair[1] * 255;
 			b = Menu.Colors.SpreadCrosshair[2] * 255;
 			a = Menu.Colors.SpreadCrosshair[3] * 255;
-			if (csgo::LocalPlayer && csgo::MainWeapon && csgo::MainWeapon->IsValid())
+			if (g::LocalPlayer && g::MainWeapon && g::MainWeapon->IsValid())
 			{
-				float radius = csgo::spread;
-				if (csgo::LocalPlayer->GetHealth() > 0 && csgo::LocalPlayer->isAlive())
+				float radius = g::spread;
+				if (g::LocalPlayer->GetHealth() > 0 && g::LocalPlayer->isAlive())
 				{
 					if (radius > 0)
-						g_pRender->CircleFilledDualColor(csgo::Screen.width / 2, csgo::Screen.height / 2, radius, 0, full, 100, D3DCOLOR_ARGB(a, r, g, b), D3DCOLOR_ARGB(255, 255, 255, 255), pDevice);
+						g_pRender->CircleFilledDualColor(g::Screen.width / 2, g::Screen.height / 2, radius, 0, full, 100, D3DCOLOR_ARGB(a, r, g, b), D3DCOLOR_ARGB(255, 255, 255, 255), pDevice);
 				}
 			}
 		}
@@ -431,7 +431,7 @@ void spread_crosshair(IDirect3DDevice9* pDevice)
 
 void GUI_Init(IDirect3DDevice9* pDevice)
 {
-	ImGui_ImplDX9_Init(csgo::Window, pDevice);
+	ImGui_ImplDX9_Init(g::Window, pDevice);
 
 	//ImGuiStyle        _style = ImGui::GetStyle();
 	ImGuiStyle * style = &ImGui::GetStyle();
@@ -544,7 +544,7 @@ void GUI_Init(IDirect3DDevice9* pDevice)
 	//_style.DisplaySafeAreaPadding = ImVec2(4, 4);      // If you cannot see the edge of your screen (e.g. on a TV) increase the safe area padding. Covers popups/tooltips as well regular windows.
 	//_style.AntiAliasedLines = true;             // Enable anti-aliasing on lines/borders. Disable if you are really short on CPU/GPU.
 	//_style.CurveTessellationTol = 1.25f;            // Tessellation tolerance. Decrease for highly tessellated curves (higher quality, more polygons), increase to reduce quality.
-	csgo::Init = true;
+	g::Init = true;
 }
 
 void draw_menu()
@@ -557,11 +557,11 @@ void draw_menu()
 	ImGui_ImplDX9_NewFrame();
 
 	if (Menu.Gui.Opened)
-		csgo::ShowMenu = true;
+		g::ShowMenu = true;
 	else
-		csgo::ShowMenu = false;
+		g::ShowMenu = false;
 
-	if (csgo::ShowMenu)
+	if (g::ShowMenu)
 	{
 		static const char* tabs[] = {
 			"              ragebot",
@@ -571,7 +571,7 @@ void draw_menu()
 		};
 
 		ImGui::SetNextWindowSize(ImVec2(700, 500));
-		ImGui::Begin("opaihook fixed", &Menu.Gui.Opened, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
+		ImGui::Begin("opaihook", &Menu.Gui.Opened, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
 		{
 			ImGui::SetColorEditOptions(ImGuiColorEditFlags_NoInputs | ImGuiWindowFlags_ShowBorders | ImGuiColorEditFlags_PickerHueWheel);
 
@@ -620,7 +620,30 @@ void draw_menu()
 					}
 
 					ImGui::Combo("Priority Hitbox", &Menu.Ragebot.Hitbox, HitboxMode, ARRAYSIZE(HitboxMode));
-					ImGui::Combo("Hitscan Type", &Menu.Ragebot.Hitscan, HitscanMode, ARRAYSIZE(HitscanMode));
+					static string view = "";
+					static const char* Hitboxes[] = { "Head" , "Neck", "Pelvis", "Stomach", "Arms", "Fists", "Legs", "Feet" };
+					if (ImGui::BeginCombo("Other hitbox", view.c_str(), 150)) {
+						view = "";
+						std::vector<std::string> item;
+						for (auto i = 0; i < ARRAYSIZE(Hitboxes); ++i) {
+							ImGui::Selectable(Hitboxes[i], &Menu.Ragebot.Hitscan_Bone[i], ImGuiSelectableFlags_DontClosePopups);
+							if (Menu.Ragebot.Hitscan_Bone[i])
+								item.push_back(Hitboxes[i]);
+						}
+
+						for (auto i = 0; i < item.size(); ++i) {
+							if (item.empty())
+								view += " ";
+							else if (item.size() >= 0)
+								view += item[i];
+							else if (!i == item.size())
+								view += item[i] + ", ";
+							
+						}
+
+						ImGui::EndCombo();
+					}
+					//ImGui::Combo("Hitscan Type", &Menu.Ragebot.Hitscan, HitscanMode, ARRAYSIZE(HitscanMode));
 
 					ImGui::SliderFloat("Pointscale", &Menu.Ragebot.pointscale, 0.f, 100.f, "%.2f%%");
 				}
@@ -780,8 +803,8 @@ void draw_menu()
 				}
 				ImGui::Combo("Weapon", &Menu.LegitBot.iSettingType, SettingType, IM_ARRAYSIZE(SettingType));
 
-				if (csgo::MainWeapon && !(csgo::MainWeapon->GetWeaponType() == WEPCLASS_KNIFE || csgo::MainWeapon->GetWeaponType() == WEPCLASS_INVALID) && Menu.LegitBot.iSettingType == 0)
-					WeaponID = csgo::MainWeapon->GetWeaponNum();
+				if (g::MainWeapon && !(g::MainWeapon->GetWeaponType() == WEPCLASS_KNIFE || g::MainWeapon->GetWeaponType() == WEPCLASS_INVALID) && Menu.LegitBot.iSettingType == 0)
+					WeaponID = g::MainWeapon->GetWeaponNum();
 				else if (Menu.LegitBot.iSettingType == 1)
 				{
 					ImGui::Combo("Select Weapon", &Menu.LegitBot.iCustomIndex, WeaponArray, IM_ARRAYSIZE(WeaponArray));
@@ -912,6 +935,7 @@ void draw_menu()
 					ImGui::SameLine();
 					ImGui::ColorEdit3("###styleszzxazsd ", Menu.Colors.styleshands);
 
+					ImGui::SliderInt("Target Alpha", &Menu.Visuals.entplayeralpha, 0, 255, "%.0f%%");
 					ImGui::SliderInt("Local Alpha", &Menu.Visuals.playeralpha, 0, 255, "%.0f%%");
 				}
 				break;
@@ -956,8 +980,12 @@ void draw_menu()
 					ImGui::Checkbox("Auto strafe", &Menu.Misc.AutoStrafe);
 					ImGui::Combo("Circle Strafe", &Menu.Misc.circlestrafekey, KeyStrings, ARRAYSIZE(KeyStrings));
 
-					ImGui::SliderInt("Player Viewmodel", &Menu.Misc.PlayerViewmodel, -120, 120, "%.0f%%");
-					ImGui::SliderInt("Player FOV", &Menu.Misc.PlayerFOV, -50, 50, "%.0f%%");
+					
+					ImGui::SliderInt("World FOV", &Menu.Misc.PlayerFOV, -50, 50, "%.0f%%");
+					ImGui::SliderInt("Viewmodel FOV", &Menu.Misc.PlayerViewmodel, -120, 120, "%.0f%%");
+					ImGui::SliderInt("Viewmodel X", &Menu.Visuals.Viewmodel_X, -50, 50, "%.0f%%");
+					ImGui::SliderInt("Viewmodel Y", &Menu.Visuals.Viewmodel_Y, -50, 50, "%.0f%%");
+					ImGui::SliderInt("Viewmodel Z", &Menu.Visuals.Viewmodel_Z, -50, 50, "%.0f%%");
 
 					static const char* bullet[] = {
 						"Beam",
@@ -1030,7 +1058,7 @@ HRESULT __stdcall Hooks::D3D9_EndScene(IDirect3DDevice9* pDevice)
 {
 	HRESULT result = d3d9VMT->GetOriginalMethod<EndSceneFn>(42)(pDevice);
 	
-	if (!csgo::Init)
+	if (!g::Init)
 		GUI_Init(pDevice);
 
 	static void* dwReturnAddress = _ReturnAddress();
@@ -1051,7 +1079,7 @@ HRESULT __stdcall Hooks::D3D9_EndScene(IDirect3DDevice9* pDevice)
 
 HRESULT __stdcall Hooks::hkdReset(IDirect3DDevice9* pDevice, D3DPRESENT_PARAMETERS* pPresParam)
 {
-	if (!csgo::Init)
+	if (!g::Init)
 		return oResetScene(pDevice, pPresParam);
 
 	ImGui_ImplDX9_InvalidateDeviceObjects();

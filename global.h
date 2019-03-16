@@ -62,7 +62,7 @@ public:
 	QAngle viewangles = QAngle(pitch, yaw, roll);
 };
 
-namespace csgo // Global Stuff
+namespace g // Global Stuff
 {
 	extern std::deque<std::tuple<Vector, float, Color>> hitscan_points;
 
@@ -126,7 +126,7 @@ namespace csgo // Global Stuff
 	extern int								wbcurpoint;
 	extern int                              missed_shots[64];
 	extern int								nChokedTicks;
-	extern int                              localtime;
+	//extern int                              localtime;
 	extern int                              chokedticks;
 
 }
@@ -195,6 +195,6 @@ typedef CEncryptedString EString;
 extern CDataMapUtils* g_pData;
 
 extern CPlayerlistInfo* g_pPlayerlistInfo[64];
-extern CBaseEntity* csgo::LocalPlayer;
-extern CBaseCombatWeapon* csgo::MainWeapon;
-extern CUserCmd*	csgo::UserCmd;
+extern CBaseEntity* g::LocalPlayer;
+extern CBaseCombatWeapon* g::MainWeapon;
+extern CUserCmd*	g::UserCmd;

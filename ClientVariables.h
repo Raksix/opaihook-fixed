@@ -2,6 +2,17 @@
 #include <string>
 #include <vector>
 
+enum HITSCAN {
+	SCAN_HEAD = 0,
+	SCAN_NECK = 1,
+	SCAN_PELVIS = 2,
+	SCAN_STOMACH = 3,
+	SCAN_ARMS = 4,
+	SCAN_FISTS = 5,
+	SCAN_LEGS = 6,
+	SCAN_FEET = 7
+};
+
 class ClientVariables
 {
 public:
@@ -34,6 +45,7 @@ public:
 		int Preferbodyaim = 0;
 		int Hitbox = 0;
 		int Hitscan = 0;
+		bool Hitscan_Bone[8];
 		bool AutowallHitscan = false;
 		bool Autowall = false;
 		int Multipoint = 0.f;
@@ -138,6 +150,7 @@ public:
 		bool nightmode = false;
 		bool blendonscope = false;
 		int playeralpha = 255;
+		int entplayeralpha = 255;
 		int scopeplayeralpha = 255;
 		int enemyalpha = 255;
 		int Skybox = 0;
@@ -167,6 +180,7 @@ public:
 			int type;
 		}Spread;
 		int htSound = 0;
+		int Viewmodel_X = 0, Viewmodel_Y = 0, Viewmodel_Z = 0;
 	} Visuals;
 
 	struct Misc

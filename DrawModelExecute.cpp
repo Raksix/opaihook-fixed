@@ -88,9 +88,11 @@ void __fastcall Hooks::scene_end(void* thisptr, void* edx) {
 
 	if (g_pEngine->IsConnected() && g_pEngine->IsInGame())
 	{
-		auto m_local = csgo::LocalPlayer;
+		auto m_local = g::LocalPlayer;
 		for (auto i = 0; i < g_GlowObjManager->size; i++)
 		{
+			if (!m_local)
+				return;
 			auto glow_object = &g_GlowObjManager->m_GlowObjectDefinitions[i];
 
 			CBaseEntity *m_entity = glow_object->m_pEntity;
@@ -133,93 +135,95 @@ void __fastcall Hooks::scene_end(void* thisptr, void* edx) {
 			
 			}
 		}
-	}
 
-	if (Menu.Visuals.ChamsEnable)
-	{
-		static IMaterial *covered;
-		static IMaterial *open;
-
-		switch (Menu.Visuals.ChamsStyle)
+		if (Menu.Visuals.ChamsEnable)
 		{
-		case 0:
-			covered = CoveredLit;
-			open = OpenLit;
-			break;
-		case 1:
-			covered = CoveredFlat;
-			open = OpenFlat;
-			break;
-		case 2:
-			covered = materialMetall;
-			open = materialMetallnZ;
-			break;
+			static IMaterial *covered;
+			static IMaterial *open;
 
-		}
-
-		for (int i = 1; i < g_pEngine->GetMaxClients(); ++i) {
-			CBaseEntity* ent = (CBaseEntity*)g_pEntitylist->GetClientEntity(i);
-
-			if (ent == csgo::LocalPlayer && csgo::LocalPlayer != nullptr)
+			switch (Menu.Visuals.ChamsStyle)
 			{
-				if (csgo::LocalPlayer->isAlive())
-				{
-					if (Menu.Visuals.ChamsL)
-					{
-						g_pRenderView->SetColorModulation(Menu.Colors.PlayerChamsl);
+			case 0:
+				covered = CoveredLit;
+				open = OpenLit;
+				break;
+			case 1:
+				covered = CoveredFlat;
+				open = OpenFlat;
+				break;
+			case 2:
+				covered = materialMetall;
+				open = materialMetallnZ;
+				break;
 
-						g_pModelRender->ForcedMaterialOverride(open);
-						csgo::LocalPlayer->draw_model(0x1, 255);
-						g_pModelRender->ForcedMaterialOverride(nullptr);
-					}
-				}
 			}
 
-			if (ent->IsValidRenderable() && Menu.Visuals.ChamsPlayer)
-			{
-				if (Menu.Visuals.ChamsPlayerWall)
+			for (int i = 1; i < 65; ++i) {
+				CBaseEntity* ent = (CBaseEntity*)g_pEntitylist->GetClientEntity(i);
+
+				if (ent == g::LocalPlayer && g::LocalPlayer != nullptr)
 				{
-					g_pRenderView->SetColorModulation(Menu.Colors.PlayerChamsWall);
-					g_pModelRender->ForcedMaterialOverride(covered);
+					if (g::LocalPlayer->isAlive())
+					{
+						if (Menu.Visuals.ChamsL)
+						{
+							g_pRenderView->SetColorModulation(Menu.Colors.PlayerChamsl);
+
+							g_pModelRender->ForcedMaterialOverride(open);
+							g::LocalPlayer->draw_model(0x1, 255);
+							g_pModelRender->ForcedMaterialOverride(nullptr);
+						}
+					}
+				}
+
+				if (ent->IsValidRenderable() && Menu.Visuals.ChamsPlayer)
+				{
+					if (Menu.Visuals.ChamsPlayerWall)
+					{
+						g_pRenderView->SetColorModulation(Menu.Colors.PlayerChamsWall);
+						g_pModelRender->ForcedMaterialOverride(covered);
+						ent->draw_model(0x1, 255);
+						g_pModelRender->ForcedMaterialOverride(nullptr);
+					}
+					g_pRenderView->SetColorModulation(Menu.Colors.PlayerChams);
+					g_pModelRender->ForcedMaterialOverride(open);
 					ent->draw_model(0x1, 255);
 					g_pModelRender->ForcedMaterialOverride(nullptr);
 				}
-				g_pRenderView->SetColorModulation(Menu.Colors.PlayerChams);
-				g_pModelRender->ForcedMaterialOverride(open);
-				ent->draw_model(0x1, 255);
-				g_pModelRender->ForcedMaterialOverride(nullptr);
-			}
 
-			if (ent->IsValidRenderable() && Menu.Visuals.ShowBacktrack)
-			{
-				Vector orig = ent->GetAbsOrigin();
-
-				if (g_BacktrackHelper->PlayerRecord[i].records.size() > 0)
+				if (ent->IsValidRenderable() && Menu.Visuals.ShowBacktrack)
 				{
-					tick_record record = g_BacktrackHelper->PlayerRecord[i].records.at(0);
+					Vector orig = ent->GetAbsOrigin();
 
-					if (orig != record.m_vecAbsOrigin)
+					if (g_BacktrackHelper->PlayerRecord[i].records.size() > 0)
 					{
-						g_pRenderView->SetColorModulation(Menu.Colors.ChamsHistory);
-						g_pRenderView->SetBlend(0.7f);
-						ent->SetAbsOrigin(record.m_vecAbsOrigin);
-						ent->UpdateClientSideAnimation();
-						g_pModelRender->ForcedMaterialOverride(CoveredFlat);
-						ent->draw_model(0x1, 255);
-						g_pModelRender->ForcedMaterialOverride(nullptr);
+						tick_record record = g_BacktrackHelper->PlayerRecord[i].records.at(0);
 
-						ent->SetAbsOrigin(orig);
+						if (orig != record.m_vecAbsOrigin)
+						{
+							g_pRenderView->SetColorModulation(Menu.Colors.ChamsHistory);
+							g_pRenderView->SetBlend(0.7f);
+							ent->SetAbsOrigin(record.m_vecAbsOrigin);
+							ent->UpdateClientSideAnimation();
+							g_pModelRender->ForcedMaterialOverride(CoveredFlat);
+							ent->draw_model(0x1, 255);
+							g_pModelRender->ForcedMaterialOverride(nullptr);
+
+							ent->SetAbsOrigin(orig);
+						}
 					}
 				}
 			}
 		}
 	}
+
+	
 }
 
 void __fastcall Hooks::DrawModelExecute(void* ecx, void* edx, void* * ctx, void *state, const ModelRenderInfo_t &pInfo, matrix3x4_t *pCustomBoneToWorld)
 {
 
-	if (!csgo::LocalPlayer)
+	if (!g::LocalPlayer)
 	{
 		modelrenderVMT->GetOriginalMethod<DrawModelExecuteFn>(21)(ecx, ctx, state, pInfo, pCustomBoneToWorld);
 		return;
@@ -230,10 +234,12 @@ void __fastcall Hooks::DrawModelExecute(void* ecx, void* edx, void* * ctx, void 
 	const char* ModelName = g_pModelInfo->GetModelName((model_t*)pInfo.pModel);
 
 
-
-	if (ent == csgo::LocalPlayer)
+	if (ent == g::LocalPlayer)
 	{
 		g_pRenderView->SetBlend(Menu.Visuals.playeralpha / 255.f);
+	}
+	else if (ent->IsValidRenderable() && strstr(ModelName, "models/player")) {
+		g_pRenderView->SetBlend(Menu.Visuals.entplayeralpha / 255.f);
 	}
 	//else if (ent->IsValidTarget() && Menu.Visuals.ShowBacktrack) {
 	//	if (g_BacktrackHelper->PlayerRecord[ent->Index()].records.size() > 0) {
