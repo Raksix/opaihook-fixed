@@ -68,23 +68,14 @@ namespace binds
 			back = true;
 		}
 
-		if (g::SendPacket) {
-			if (left)
-				g::UserCmd->viewangles.y -= 90;
-			else if (right)
-				g::UserCmd->viewangles.y += 90;
-			else if (back)
-				g::UserCmd->viewangles.y += 180;
+		if (left)
+			g::UserCmd->viewangles.y -= 90;
+		else if (right)
+			g::UserCmd->viewangles.y += 90;
+		else if (back)
+		{
+
 		}
-		else {
-			if (left)
-				g::UserCmd->viewangles.y += 90;
-			else if (right)
-				g::UserCmd->viewangles.y -= 90;
-			else if (back)
-				g::UserCmd->viewangles.y += 180;
-		}
-		
 	}
 }
 
@@ -274,9 +265,8 @@ namespace freestanding
 		}
 
 		if (!no_active)
-			g::UserCmd->viewangles.y = RAD2DEG(bestrotation);
-		else
-			g::UserCmd->viewangles.y += (180);
+			g::UserCmd->viewangles.y = RAD2DEG(bestrotation) - 180;
+
 	}
 }
 
@@ -284,56 +274,102 @@ CAntiaim* g_Antiaim = new CAntiaim;
 
 void CAntiaim::DoAntiAims()
 {
-	g::UserCmd->viewangles.x = 89.f;
-
-	static float add = 0;
-	static float old_angle = 0;
-
-	if (g::SendPacket) {
-		add = !(g::UserCmd->command_number % 3) ? 5 : 175;
-		g::UserCmd->viewangles.y = old_angle + add;
-	}
-	else {
-		if (next_lby_update()) // lol
-			g::UserCmd->viewangles.y -= 119;
-		switch (Menu.Antiaim.DirectonType)
+	auto Pitch = [](int choose)
+	{
+		switch (choose)
 		{
-		case 1://binds
-		{
-			binds::Do();
+		case 1:
+			g::UserCmd->viewangles.x = 89;
+			break;
+		case 2:
+			g::UserCmd->viewangles.x = -180;
+			break;
+		case 3:
+			g::UserCmd->viewangles.x = -991;
+			break;
+		case 4:
+			g::UserCmd->viewangles.x = 991;
+			break;
+		case 5:
+			g::UserCmd->viewangles.x = 0;
+			break;
+		case 6:
+			g::UserCmd->viewangles.x = 1080;
+			break;
 		}
-		break;
-		case 2://freestanding
-			freestanding::Do();
+	};
+
+	auto Yaw = [](int select)
+	{
+		switch (select)
+		{
+		case 1:
+			g::UserCmd->viewangles.y += 180;
+			break;
+		case 2:
+			g::UserCmd->viewangles.y += 180 + Math::RandomFloat(-Menu.Antiaim.JitterRange, Menu.Antiaim.JitterRange);
 			break;
 		case 3:
 		{
-			static float at_target_ang = 0;
-			for (int i = 1; i < 65; ++i) {
-				auto ent = g_pEntitylist->GetClientEntity(i);
-				if (!ent->IsValidTarget())
-					continue;
-
-				float dist = 9999.f;
-				float cur_dist = GameUtils::CalculateAngle(g::LocalPlayer->GetEyePosition(), ent->GetEyePosition()).y;
-				if (dist >= cur_dist) {
-					dist = cur_dist;
-					at_target_ang = dist;
-				}
-			}
-
-			g::UserCmd->viewangles.y = 180 + at_target_ang;
+			static float t;
+			t += 5;
+			if (t > 240)
+				t = 120;
+			g::UserCmd->viewangles.y += t;
 		}
 		break;
-		default:
-			g::UserCmd->viewangles.y += 180;
+		case 4:
+		{
+			static int y2 = -179;
+			int spinBotSpeedFast = Menu.Antiaim.SpinSpeed;
+
+			y2 += spinBotSpeedFast;
+
+			if (y2 >= 179)
+				y2 = -179;
+
+			g::UserCmd->viewangles.y = y2;
+		}
+		break;
+		case 5:
+			g::UserCmd->viewangles.y += Math::RandomFloat(-180, 180);
 			break;
 		}
-		old_angle = g::UserCmd->viewangles.y;
+	};
+	switch (Menu.Antiaim.DirectonType)
+	{
+	case 1://binds
+	{
+		binds::Do();
+	}
+	break;
+	case 2://freestanding
+		freestanding::Do();
+		break;
+	}
+	if (next_lby_update()) // lol
+		g::UserCmd->viewangles.y -= 119;
+
+	if (*g::LocalPlayer->GetFlags() & FL_ONGROUND)
+	{
+		if (g::LocalPlayer->GetVelocity().Length2D() < 32)
+		{
+			Pitch(Menu.Antiaim.Stand.pitch);
+			Yaw(Menu.Antiaim.Stand.yaw);
+
+		}
+		else if (g::LocalPlayer->GetVelocity().Length2D() > 32)
+		{
+			Pitch(Menu.Antiaim.Move.pitch);
+			Yaw(Menu.Antiaim.Move.yaw);
+		}
+	}
+	else
+	{
+		Pitch(Menu.Antiaim.Air.pitch);
+		Yaw(Menu.Antiaim.Air.yaw);
 	}
 }
-	
-
 
 void CAntiaim::Run(QAngle org_view)
 {
@@ -352,11 +388,14 @@ void CAntiaim::Run(QAngle org_view)
 			g::SendPacket = choke;
 
 		choke = !choke;
+		//g::UserCmd->viewangles = org_view;
 
 		DoAntiAims();
 
+
 		g::UserCmd->buttons |= IN_BULLRUSH;
 
+		//static bool counter = false;
 		if (GetAsyncKeyState('Z'))
 		{
 			static bool counter = false;
@@ -370,12 +409,23 @@ void CAntiaim::Run(QAngle org_view)
 			if (counter)
 			{
 				g::UserCmd->buttons |= IN_DUCK;
-				
+				g::SendPacket = true;
 			}
 			else {
 				g::UserCmd->buttons &= ~IN_DUCK;
-				
+				g::SendPacket = false;
 			}
 		}
+	
+
+		//Fakewalk(g::UserCmd);
+
+		/*if (g::bShouldChoke)
+			g::SendPacket = g::bShouldChoke = false;
+
+		if (!g::SendPacket)
+			g::nChokedTicks++;
+		else
+			g::nChokedTicks = 0;*/
 	}
 }

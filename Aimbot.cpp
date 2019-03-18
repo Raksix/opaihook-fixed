@@ -268,7 +268,7 @@ Vector RunAimScan(CBaseEntity* pTarget, float &simtime, Vector& origin)
 			return Vector();
 
 		tick_record record = g_BacktrackHelper->PlayerRecord[pTarget->Index()].records.at(0);
-
+		
 		simtime = record.m_flSimulationTime;
 		for (auto hitbox : GameUtils::GetMultiplePointsForHitbox(pTarget, Menu.Ragebot.Hitbox, record.boneMatrix))
 		{
@@ -284,12 +284,12 @@ Vector RunAimScan(CBaseEntity* pTarget, float &simtime, Vector& origin)
 					return hitbox;
 			}
 			else {
-				//	SetRecords(pTarget, record);
+			//	SetRecords(pTarget, record);
 
 				if (Menu.Ragebot.Autowall && g_Autowall->PenetrateWall(pTarget, hitbox) && hitbox.IsValid())
 					return hitbox;
 
-				//	Restore(pTarget);
+			//	Restore(pTarget);
 			}
 		}
 		for (auto hitbox_id : GetHitboxesToScan(pTarget))
@@ -339,7 +339,7 @@ Vector RunAimScan(CBaseEntity* pTarget, float &simtime, Vector& origin)
 				if (Menu.Ragebot.Autowall && g_Autowall->PenetrateWall(pTarget, HitBox) && !HitBox.IsZero())
 					return HitBox;
 			}
-
+			
 		}
 		for (auto HitboxID : GetHitboxesToScan(pTarget)) {
 
@@ -368,7 +368,7 @@ Vector RunAimScan(CBaseEntity* pTarget, float &simtime, Vector& origin)
 
 					}
 				}
-
+				
 			}
 		}
 	}
@@ -533,7 +533,7 @@ void CAimbot::Run()
 					g::SendPacket = true;
 					g::UserCmd->buttons |= IN_ATTACK;
 					this->fired_in_that_tick = true;
-
+					
 					data[pTarget->GetIndex()].shoots++;
 				}
 			}

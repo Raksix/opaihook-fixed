@@ -120,8 +120,11 @@ void CBacktrackHelper::UpdateBacktrackRecords(CBaseEntity* pPlayer)
 		for (int i = 0; i < 24; i++)
 			new_record.m_flPoseParameter[i] = *(float*)((DWORD)pPlayer + offys.m_flPoseParameter + sizeof(float) * i);
 
+		int Backup = *(int*)((uintptr_t)pPlayer + 0x274);
+		*(int*)((uintptr_t)pPlayer + 0x274) = 0;
 		pPlayer->SetupBones(new_record.boneMatrix, 128, 0x100, g_pGlobals->curtime);
 		pPlayer->SetupBones2(new_record.chamsBoneMatrix, 128, 0x100, g_pGlobals->curtime);
+		*(int*)((uintptr_t)pPlayer + 0x274) = Backup;
 
 		PlayerRecord[i].records.push_back(new_record);
 	}
@@ -150,8 +153,11 @@ void CBacktrackHelper::UpdateBacktrackRecords(CBaseEntity* pPlayer)
 		for (int i = 0; i < 24; i++)
 			new_record.m_flPoseParameter[i] = *(float*)((DWORD)pPlayer + offys.m_flPoseParameter + sizeof(float) * i);
 
+		int Backup = *(int*)((uintptr_t)pPlayer + 0x274);
+		*(int*)((uintptr_t)pPlayer + 0x274) = 0;
 		pPlayer->SetupBones(new_record.boneMatrix, 128, 0x100, g_pGlobals->curtime);
 		pPlayer->SetupBones2(new_record.chamsBoneMatrix, 128, 0x100, g_pGlobals->curtime);
+		*(int*)((uintptr_t)pPlayer + 0x274) = Backup;
 
 		PlayerRecord[i].records.push_back(new_record);
 

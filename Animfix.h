@@ -20,6 +20,10 @@ public:
 			if (!entity || !g::LocalPlayer || !entity->isAlive())
 				continue;
 
+			float* pos_params = (float*)((uintptr_t)entity + 0x2774);
+			if (!pos_params)
+				return;
+
 			if (animfix[i].old_simtime != entity->GetSimulationTime()) {
 			
 				entity->GetClientSideAnimation() = true;
@@ -28,6 +32,8 @@ public:
 				if (entity->GetBasePlayerAnimState())
 					entity->GetBasePlayerAnimState()->m_iLastClientSideAnimationUpdateFramecount = g_pGlobals->framecount - 1;
 
+				//storing shit
+				//memcpy(animfix[i].pose_parameter, pos_params, sizeof(float) * 24);
 				memcpy(animfix[i].layer, entity->GetAnimOverlays(), (sizeof(AnimationLayer) * 15));
 				animfix[i].old_ragpos = entity->get_ragdoll_pos();
 				animfix[i].old_animstate = entity->GetBasePlayerAnimState();
@@ -37,6 +43,7 @@ public:
 			}
 			entity->GetClientSideAnimation() = false;
 
+			//memcpy(pos_params, animfix[i].pose_parameter, sizeof(float) * 24);
 			memcpy(entity->GetAnimOverlays(), animfix[i].layer, (sizeof(AnimationLayer) * 15));
 			entity->get_ragdoll_pos() = animfix[i].old_ragpos;
 			*(CBasePlayerAnimState**)((DWORD)entity + 0x3900) = animfix[i].old_animstate;

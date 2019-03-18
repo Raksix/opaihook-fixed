@@ -175,6 +175,19 @@ void cGameEvent::FireGameEvent(IGameEvent *event)
 	if (strcmp(szEventName, "player_hurt") == 0)
 	{
 		Hurt(event);
+
+		auto entity = g_pEntitylist->GetClientEntity(g_pEngine->GetPlayerForUserID(event->GetInt("userid")));
+		if (!entity)
+			return;
+
+		if (entity->GetTeamNum() == g::LocalPlayer->GetTeamNum())
+			return;
+
+		auto attacker = get_player(event->GetInt("attacker"));
+		if (attacker == g::LocalPlayer)
+		{
+			g_Aimbot->data[entity->Index()].shoots_hit++;
+		}
 	}
 
 	if (Menu.Visuals.Hitmarker)

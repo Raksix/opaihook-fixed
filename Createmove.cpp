@@ -194,7 +194,7 @@ bool __fastcall Hooks::CreateMove(void* thisptr, void*, float flInputSampleTime,
 		return true;
 
 	g::UserCmd = cmd;
-	g::UserCmdForBacktracking = cmd;
+	g::UserCmdForBacktracking = g::UserCmd;
 
 	PVOID pebp;
 	__asm mov pebp, ebp;
@@ -221,24 +221,22 @@ bool __fastcall Hooks::CreateMove(void* thisptr, void*, float flInputSampleTime,
 			g_Antiaim->Run(Vector());
 			InitFakeLatency();
 
-			g_Misc->FixMovement();
-			g_Misc->FixCmd();
-
-			cmd = g::UserCmd;
-			bSendPacket = g::SendPacket;
-			g::ChokedPackets = g_pEngine->GetNetChannel()->m_nChokedPackets;
-
 			if (g::SendPacket) {
 				g::FakeAngle = cmd->viewangles;
 				g::fakeOrigin = g::LocalPlayer->GetAbsOrigin();
 			}
-			else 
-				g::RealAngle = cmd->viewangles;
+			g::RealAngle = cmd->viewangles;
 			g::spread = g::MainWeapon->GetSpread() + (g::MainWeapon->GetInaccuracy() * 800);
+
+			g_Misc->FixMovement();
+			g_Misc->FixCmd();
 
 			grenade_prediction::instance().Tick(g::UserCmd->buttons);
 		}
 	}
 
+	cmd = g::UserCmd;
+	bSendPacket = g::SendPacket;
+	g::ChokedPackets = g_pEngine->GetNetChannel()->m_nChokedPackets;
 	return false;
 }
