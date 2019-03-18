@@ -220,6 +220,128 @@ void __fastcall Hooks::scene_end(void* thisptr, void* edx) {
 	
 }
 
+void AngleMatrix(const Vector angles, matrix3x4_t& matrix)
+{
+	float sr, sp, sy, cr, cp, cy;
+
+	sy = sin(DEG2RAD(angles[1]));
+	cy = cos(DEG2RAD(angles[1]));
+
+	sp = sin(DEG2RAD(angles[0]));
+	cp = cos(DEG2RAD(angles[0]));
+
+	sr = sin(DEG2RAD(angles[2]));
+	cr = cos(DEG2RAD(angles[2]));
+
+	//matrix = (YAW * PITCH) * ROLL
+	matrix[0][0] = cp * cy;
+	matrix[1][0] = cp * sy;
+	matrix[2][0] = -sp;
+
+	float crcy = cr * cy;
+	float crsy = cr * sy;
+	float srcy = sr * cy;
+	float srsy = sr * sy;
+
+	matrix[0][1] = sp * srcy - crsy;
+	matrix[1][1] = sp * srsy + crcy;
+	matrix[2][1] = sr * cp;
+
+	matrix[0][2] = (sp * crcy + srsy);
+	matrix[1][2] = (sp * crsy - srcy);
+	matrix[2][2] = cr * cp;
+
+	matrix[0][3] = 0.0f;
+	matrix[1][3] = 0.0f;
+	matrix[2][3] = 0.0f;
+}
+
+void MatrixSetColumn(const Vector &in, int column, matrix3x4_t& out)
+{
+	out[0][column] = in.x;
+	out[1][column] = in.y;
+	out[2][column] = in.z;
+}
+
+void AngleMatrix(const QAngle &angles, const Vector &position, matrix3x4_t& matrix_out)
+{
+	AngleMatrix(angles, matrix_out);
+	MatrixSetColumn(position, 3, matrix_out);
+}
+
+void MatrixCopy(const matrix3x4_t& source, matrix3x4_t& target)
+{
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 4; j++) {
+			target[i][j] = source[i][j];
+		}
+	}
+}
+
+void MatrixMultiply(matrix3x4_t& in1, const matrix3x4_t& in2)
+{
+	matrix3x4_t out;
+	if (&in1 == &out)
+	{
+		matrix3x4_t in1b;
+		MatrixCopy(in1, in1b);
+		MatrixMultiply(in1b, in2);
+		return;
+	}
+	if (&in2 == &out)
+	{
+		matrix3x4_t in2b;
+		MatrixCopy(in2, in2b);
+		MatrixMultiply(in1, in2b);
+		return;
+	}
+	out[0][0] = in1[0][0] * in2[0][0] + in1[0][1] * in2[1][0] +
+		in1[0][2] * in2[2][0];
+	out[0][1] = in1[0][0] * in2[0][1] + in1[0][1] * in2[1][1] +
+		in1[0][2] * in2[2][1];
+	out[0][2] = in1[0][0] * in2[0][2] + in1[0][1] * in2[1][2] +
+		in1[0][2] * in2[2][2];
+	out[0][3] = in1[0][0] * in2[0][3] + in1[0][1] * in2[1][3] +
+		in1[0][2] * in2[2][3] + in1[0][3];
+	out[1][0] = in1[1][0] * in2[0][0] + in1[1][1] * in2[1][0] +
+		in1[1][2] * in2[2][0];
+	out[1][1] = in1[1][0] * in2[0][1] + in1[1][1] * in2[1][1] +
+		in1[1][2] * in2[2][1];
+	out[1][2] = in1[1][0] * in2[0][2] + in1[1][1] * in2[1][2] +
+		in1[1][2] * in2[2][2];
+	out[1][3] = in1[1][0] * in2[0][3] + in1[1][1] * in2[1][3] +
+		in1[1][2] * in2[2][3] + in1[1][3];
+	out[2][0] = in1[2][0] * in2[0][0] + in1[2][1] * in2[1][0] +
+		in1[2][2] * in2[2][0];
+	out[2][1] = in1[2][0] * in2[0][1] + in1[2][1] * in2[1][1] +
+		in1[2][2] * in2[2][1];
+	out[2][2] = in1[2][0] * in2[0][2] + in1[2][1] * in2[1][2] +
+		in1[2][2] * in2[2][2];
+	out[2][3] = in1[2][0] * in2[0][3] + in1[2][1] * in2[1][3] +
+		in1[2][2] * in2[2][3] + in1[2][3];
+
+	in1 = out;
+}
+
+void VectorRotate(const float *in1, const matrix3x4_t& in2, float *out)
+{
+	out[0] = DotProduct(in1, in2[0]);
+	out[1] = DotProduct(in1, in2[1]);
+	out[2] = DotProduct(in1, in2[2]);
+}
+
+void VectorRotate(const Vector& in1, const matrix3x4_t &in2, Vector &out)
+{
+	VectorRotate(&in1.x, in2, &out.x);
+}
+
+void VectorRotate(const Vector &in1, const QAngle &in2, Vector &out)
+{
+	matrix3x4_t matRotate;
+	AngleMatrix(in2, matRotate);
+	VectorRotate(in1, matRotate, out);
+}
+
 void __fastcall Hooks::DrawModelExecute(void* ecx, void* edx, void* * ctx, void *state, const ModelRenderInfo_t &pInfo, matrix3x4_t *pCustomBoneToWorld)
 {
 
@@ -236,24 +358,69 @@ void __fastcall Hooks::DrawModelExecute(void* ecx, void* edx, void* * ctx, void 
 
 	if (ent == g::LocalPlayer)
 	{
+		if (Menu.Visuals.FakeChams && (g::LocalPlayer->GetBasePlayerAnimState() != nullptr)) {
+			Vector BonePos;
+			Vector OutPos;
+			matrix3x4_t BoneMatrix[MAXSTUDIOBONES];
+			for (int i = 0; i < MAXSTUDIOBONES; i++)
+			{
+				AngleMatrix(Vector(0, Math::NormalizeYaw(g::LocalPlayer->GetBasePlayerAnimState()->m_flGoalFeetYaw), 0), BoneMatrix[i]);
+				MatrixMultiply(BoneMatrix[i], pCustomBoneToWorld[i]);
+				BonePos = Vector(pCustomBoneToWorld[i][0][3], pCustomBoneToWorld[i][1][3], pCustomBoneToWorld[i][2][3]) - pInfo.origin;
+				VectorRotate(BonePos, Vector(0, g::FakeAngle.y, 0), OutPos);
+				OutPos += g::fakeOrigin;
+
+				BoneMatrix[i][0][3] = OutPos.x;
+				BoneMatrix[i][1][3] = OutPos.y;
+				BoneMatrix[i][2][3] = OutPos.z;
+
+			}
+			float clr[3] = { 0.f, 0.7f, 0.7f };
+			
+			static auto cur_material = g_pMaterialSystem->FindMaterial("models/inventory_items/dogtags/dogtags_outline", TEXTURE_GROUP_OTHER);
+			cur_material->SetMaterialVarFlag(MATERIAL_VAR_IGNOREZ, true);
+			g_pModelRender->ForcedMaterialOverride(cur_material);
+			g_pRenderView->SetColorModulation(clr);
+			modelrenderVMT->GetOriginalMethod<DrawModelExecuteFn>(21)(ecx, ctx, state, pInfo, BoneMatrix);
+		}
 		g_pRenderView->SetBlend(Menu.Visuals.playeralpha / 255.f);
+		if (Menu.Visuals.ChamsL)
+		{
+			static IMaterial *covered;
+			static IMaterial *open;
+
+			switch (Menu.Visuals.ChamsStyle)
+			{
+			case 0:
+				covered = CoveredLit;
+				open = OpenLit;
+				break;
+			case 1:
+				covered = CoveredFlat;
+				open = OpenFlat;
+				break;
+			case 2:
+				covered = materialMetall;
+				open = materialMetallnZ;
+				break;
+
+			}
+
+			g_pRenderView->SetColorModulation(Menu.Colors.PlayerChamsl);
+
+			g_pModelRender->ForcedMaterialOverride(open);
+			modelrenderVMT->GetOriginalMethod<DrawModelExecuteFn>(21)(ecx, ctx, state, pInfo, pCustomBoneToWorld);
+		}
+		else {
+			float clr2[3] = { 1, 1, 1 };
+			g_pRenderView->SetColorModulation(clr2);
+			g_pModelRender->ForcedMaterialOverride(nullptr);
+			modelrenderVMT->GetOriginalMethod<DrawModelExecuteFn>(21)(ecx, ctx, state, pInfo, pCustomBoneToWorld);
+		}
 	}
 	else if (ent->IsValidRenderable() && strstr(ModelName, "models/player")) {
 		g_pRenderView->SetBlend(Menu.Visuals.entplayeralpha / 255.f);
 	}
-	//else if (ent->IsValidTarget() && Menu.Visuals.ShowBacktrack) {
-	//	if (g_BacktrackHelper->PlayerRecord[ent->Index()].records.size() > 0) {
-	//		for (auto record : g_BacktrackHelper->PlayerRecord[ent->Index()].records) {
-
-	//			g_pRenderView->SetColorModulation(Menu.Colors.ChamsHistory);
-	//			g_pRenderView->SetBlend(0.7f);
-	//			g_pModelRender->ForcedMaterialOverride(CoveredFlat);
-	//			modelrenderVMT->GetOriginalMethod<DrawModelExecuteFn>(21)(ecx, ctx, state, pInfo, record.chamsBoneMatrix);
-	//		}
-	//	}
-	//	
-	//}
-//	modelrenderVMT->GetOriginalMethod<DrawModelExecuteFn>(21)(ecx, ctx, state, pInfo, pCustomBoneToWorld);
 	const auto mdl = pInfo.pModel;
 
 	if (Menu.Colors.Props) {
