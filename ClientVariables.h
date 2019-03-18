@@ -174,6 +174,8 @@ public:
 		bool ChamsHandsWireframe = false;
 		bool WeaponWireframe = false;
 		bool WeaponChams = false;
+		bool FakeChams = false;
+		bool FakeLagChams = false;
 		struct
 		{
 			int resolution = 5;

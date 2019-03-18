@@ -611,9 +611,9 @@ void draw_menu()
 					ImGui::SliderInt("Hitchance", &Menu.Ragebot.Minhitchance, 0, 100, "%.0f%%");
 					ImGui::SliderInt("Min damage", &Menu.Ragebot.Mindamage, 0, 100, "%.0f%%");
 					ImGui::Checkbox("Backtrack", &Menu.Ragebot.PositionAdjustment);
-					
 
-				//	ImGui::Checkbox("Animation Fix (Local Player)", &Menu.Ragebot.AnimFix);
+
+					//	ImGui::Checkbox("Animation Fix (Local Player)", &Menu.Ragebot.AnimFix);
 					ImGui::Checkbox("Fake latency", &Menu.Ragebot.FakeLatency);
 					if (Menu.Ragebot.FakeLatency) {
 						ImGui::SliderFloat("value", &Menu.Ragebot.FakeLatencyAmount, 0.15, 1, "%.2f");
@@ -638,7 +638,7 @@ void draw_menu()
 								view += item[i];
 							else if (!i == item.size())
 								view += item[i] + ", ";
-							
+
 						}
 
 						ImGui::EndCombo();
@@ -653,66 +653,17 @@ void draw_menu()
 					ImGui::Checkbox("Enable###_anti_aim", &Menu.Antiaim.AntiaimEnable);
 					if (Menu.Antiaim.AntiaimEnable)
 					{
-						static const char* aaType[] =
-						{
-							"Stand",
-							"Move",
-							"Air"
-						};
-
-						static const char* Pitch[] =
-						{
-							"Off",
-							"Emotion",
-							"Down",
-							"Fake down",
-							"Fake up",
-							"Zero",
-							"Fake Zero"
-						};
-
-						static const char* yaw[] =
-						{
-							"Off",
-							"Backward",
-							"Backward jitter",
-							"Backward spin",
-							"Spinbot",
-							"Random"
-						};
-
 						static const char* direction[] =
 						{
 							"Off",
 							"on binds",
-							"freestanding"
+							"freestanding",
+							"at target"
 						};
 
-						ImGui::Combo("type", &Menu.Antiaim.aatype, aaType, ARRAYSIZE(aaType));
-
-						switch (Menu.Antiaim.aatype)
-						{
-						case 0:
-							ImGui::Combo("pitch (Stand)", &Menu.Antiaim.Stand.pitch, Pitch, ARRAYSIZE(Pitch));
-							//ImGui::Combo("yaw (Stand)", &Menu.Antiaim.Stand.yaw, yaw, ARRAYSIZE(yaw));
-							ImGui::Combo("yaw (Stand)", &Menu.Antiaim.Stand.fakeyaw, yaw, ARRAYSIZE(yaw));
-							break;
-						case 1:
-							ImGui::Combo("pitch (Move)", &Menu.Antiaim.Move.pitch, Pitch, ARRAYSIZE(Pitch));
-							//ImGui::Combo("yaw (Move)", &Menu.Antiaim.Move.yaw, yaw, ARRAYSIZE(yaw));
-							ImGui::Combo("yaw (Move)", &Menu.Antiaim.Move.fakeyaw, yaw, ARRAYSIZE(yaw));
-							break;
-						case 2:
-							ImGui::Combo("pitch (Air)", &Menu.Antiaim.Air.pitch, Pitch, ARRAYSIZE(Pitch));
-							//ImGui::Combo("yaw (Air)", &Menu.Antiaim.Air.yaw, yaw, ARRAYSIZE(yaw));
-							ImGui::Combo("yaw (Air)", &Menu.Antiaim.Air.fakeyaw, yaw, ARRAYSIZE(yaw));
-							break;
-						}
-						
-					    ImGui::Combo("Direction", &Menu.Antiaim.DirectonType, direction, ARRAYSIZE(direction));
+						ImGui::Combo("Direction", &Menu.Antiaim.DirectonType, direction, ARRAYSIZE(direction));
 						ImGui::Checkbox("LBY indicator", &Menu.Antiaim.Indicator);
-						//ImGui::Checkbox("AntiAim Lines", &Menu.Antiaim.Lines);
-						//ImGui::SliderInt("LBY Delta", &Menu.Antiaim.LBYDelta, -180, 180);
+						ImGui::Checkbox("Fake Chams", &Menu.Visuals.FakeChams);
 						ImGui::SliderInt("Spin Speed", &Menu.Antiaim.SpinSpeed, -50, 50);
 						ImGui::SliderInt("Jitter Range", &Menu.Antiaim.JitterRange, -180, 180);
 						ImGui::Checkbox("Knife bot", &Menu.Misc.KnifeBot);
